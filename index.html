@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🌱 Little Learner</title>
+
+<!-- Preload fonts used by common_ui.css -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Lilita+One&family=Quicksand:wght@500;700&display=swap" rel="stylesheet">
+
+<!-- Shared UI kit (reset, colors, cards, buttons, animations, etc.) -->
+<link rel="stylesheet" href="css/common_ui.css">
+
+<style>
+  /* Home page specific styles */
+  .hero {
+    text-align: center;
+    margin: 20px 0 40px;
+  }
+  .hero h1 {
+    font-size: clamp(2.8rem, 8vw, 5rem);
+    color: var(--red);
+    text-shadow: 4px 4px 0 var(--yellow), 6px 6px 0 var(--ink);
+    transform: rotate(-3deg);
+    margin-bottom: 8px;
+  }
+  .hero .tagline {
+    font-size: 1.4rem;
+    color: #8a7560;
+    font-weight: 700;
+  }
+
+  .activities-menu {
+    width: 100%;
+    max-width: 620px;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    margin: 0 auto;
+  }
+
+  .menu-card {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    padding: 24px;
+    font-size: 1.8rem;
+    text-align: left;
+    cursor: pointer;
+  }
+
+  .menu-card .emoji {
+    font-size: 4rem;
+    width: 90px;
+    height: 90px;
+    display: grid;
+    place-items: center;
+    background: var(--yellow);
+    border-radius: 50%;
+    flex-shrink: 0;
+    border: 5px solid var(--ink);
+  }
+
+  .coming-soon {
+    opacity: 0.6;
+    pointer-events: none;
+  }
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <h1>ChildPlay 🐣</h1>
+  <p class="tagline">Fun learning activities for little explorers</p>
+</div>
+
+<div class="activities-menu">
+  <!-- Letters -->
+  <a href="activities/letters/en.html" class="menu-card ink-border press-transition">
+    <div class="emoji">🔤</div>
+    <div>
+      <strong>Tappy ABC!</strong><br>
+      <span class="subtitle">Learn letters with animals, fruits &amp; more</span>
+    </div>
+  </a>
+
+  <!-- Numbers -->
+  <a href="activities/numbers/en.html" class="menu-card ink-border press-transition">
+    <div class="emoji">🔢</div>
+    <div>
+      <strong>Count With Me!</strong><br>
+      <span class="subtitle">Numbers, counting &amp; number hunts</span>
+    </div>
+  </a>
+
+  <!-- Spelling (placeholder - directory exists but not yet built) -->
+  <a href="activities/spelling/" class="menu-card ink-border press-transition coming-soon">
+    <div class="emoji">📝</div>
+    <div>
+      <strong>Super Spelling</strong><br>
+      <span class="subtitle">Coming soon — learn to spell with fun words!</span>
+    </div>
+  </a>
+</div>
+
+<script>
+// Simple press feedback using shared classes
+document.querySelectorAll('.menu-card').forEach(card => {
+  card.addEventListener('mousedown', () => card.classList.add('press-down'));
+  card.addEventListener('mouseup', () => card.classList.remove('press-down'));
+  card.addEventListener('mouseleave', () => card.classList.remove('press-down'));
+});
+</script>
+
+</body>
+</html>
