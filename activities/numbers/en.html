@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<title>Count With Me!</title>
+
+<!-- 
+  PURPOSE OF THIS FILE:
+  Self-contained "Count With Me" educational activity for early math skills.
+  - Links to ../../css/common_ui.css for ALL base styling, reset, typography, 
+    shared animations (@keyframes pop/wiggle/float/shake/fall), components (.menu-card, .icon-btn, 
+    .card, .cheer, .confetti-layer, press effects, responsive rules).
+  - Inline <style> now contains ONLY app-specific rules: screen layout, home-title wave animation, 
+    .num-tile backgrounds (using shared --c1..--c10), critter/tapped/pulse keyframes, hunt-target, 
+    and minor overrides for shadows/gaps.
+  - JavaScript implements 3 games (Number Parade, Count the Critters, Number Hunt), uses Web SpeechSynthesis 
+    for number pronunciation, confetti/celebrate effects, and navigation between screens.
+  - Uses the unified color palette from common_ui.css (:root variables like --ink, --c1–c10, --yellow, --red).
+  - Goal: Build number recognition, counting, and one-to-one correspondence through interactive play.
+-->
+
+<!-- Preload Google Fonts (Fredoka for body text, Lilita One for headings) -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Lilita+One&display=swap" rel="stylesheet">
+
+<!-- Shared UI kit: reset, body background pattern, cards, buttons, all animations, .cheer, .confetti, etc. -->
+<link rel="stylesheet" href="../../css/common_ui.css">
+
+<style>
+  /* ================================================
+     APP-SPECIFIC STYLES (most layout, colors, and animations come from common_ui.css)
+     ================================================ */
+
+  :root {
+    --font-body: 'Fredoka', sans-serif;   /* Overrides the default Quicksand used in letters */
+  }
+
+  /* Full-screen game containers (only one visible at a time) */
+  .screen {
+    position: absolute; inset: 0;
+    display: none;
+    flex-direction: column;
+    padding: 18px;
+    z-index: 1;
+    overflow: hidden;
+  }
+  .screen.active { display: flex; }
+
+  /* ===== HOME SCREEN ===== */
+  .home-title {
+    text-align: center;
+    font-size: clamp(2.4rem, 7vw, 4.5rem);
+    line-height: 1;
+    text-shadow: 4px 4px 0 #fff, 4px 4px 0 1px var(--c1);
+    margin: 10px 0 4px;
+  }
+  .home-title .wave {
+    display: inline-block;
+    animation: wave 1.6s ease-in-out infinite;
+    transform-origin: 70% 70%;
+  }
+  .home-title .n1 { color: var(--c1); }
+  .home-title .n2 { color: var(--c5); }
+  .home-title .n3 { color: var(--c7); }
+  .home-title .n4 { color: var(--c2); }
+  /* Wobbly rainbow title animation (uses unified palette) */
+  @keyframes wave {
+    0%, 100% { transform: rotate(0); }
+    25% { transform: rotate(-12deg); }
+    75% { transform: rotate(12deg); }
+  }
+  .home-sub {
+    opacity: 0.75;
+    margin-bottom: 24px;
+  }
+
+  .menu {
+    flex-direction: column;
+    gap: 18px;
+    margin: auto;
+    width: min(520px, 95%);
+  }
+
+  .menu-card {
+    padding: 20px 22px;
+    gap: 18px;
+    font-size: clamp(1.4rem, 4vw, 2rem);
+    letter-spacing: 1px;
+    box-shadow: 0 8px 0 var(--ink);
+  }
+  .menu-card:active { transform: translate(0, 6px); box-shadow: 0 2px 0 var(--ink); }
+  .menu-card .emoji {
+    font-size: clamp(2.4rem, 6vw, 3.2rem);
+    width: 70px; height: 70px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    border: 3px solid var(--ink);
+  }
+
+  /* ===== TOP BAR (used by all game screens) ===== */
+  .top-bar {
+    gap: 12px;
+    margin-bottom: 14px;
+  }
+  .screen-title {
+    font-size: clamp(1.4rem, 4vw, 2rem);
+    flex: 1;
+  }
+
+  /* ===== GAME 1: NUMBER PARADE ===== */
+  .number-grid {
+    flex: 1;
+    grid-template-columns: repeat(5, 1fr);
+    grid-template-rows: repeat(2, 1fr);
+    gap: 12px;
+    padding: 6px;
+  }
+  .num-tile {
+    border-radius: 22px;
+    font-size: clamp(2rem, 7vw, 4rem);
+    color: #fff;
+    box-shadow: 0 6px 0 var(--ink);
+    text-shadow: 3px 3px 0 rgba(0,0,0,0.18);
+    position: relative;
+    overflow: hidden;
+  }
+  .num-tile.tap {
+    transform: translate(0, 5px) scale(0.97);
+    box-shadow: 0 1px 0 var(--ink);
+  }
+  /* Each tile uses a color from the unified shared palette */
+  .num-tile[data-n="1"]  { background: var(--c1); }
+  .num-tile[data-n="2"]  { background: var(--c2); }
+  .num-tile[data-n="3"]  { background: var(--c3); color: var(--ink); text-shadow: 2px 2px 0 #fff; }
+  .num-tile[data-n="4"]  { background: var(--c4); }
+  .num-tile[data-n="5"]  { background: var(--c5); }
+  .num-tile[data-n="6"]  { background: var(--c6); }
+  .num-tile[data-n="7"]  { background: var(--c7); }
+  .num-tile[data-n="8"]  { background: var(--c8); }
+  .num-tile[data-n="9"]  { background: var(--c9); }
+  .num-tile[data-n="10"] { background: var(--c10); }
+
+  .parade-display {
+    height: 120px;
+    margin-top: 8px;
+    border: 4px dashed var(--ink);
+    border-radius: 24px;
+    background: rgba(255,255,255,0.6);
+    gap: 8px;
+    padding: 10px;
+  }
+  .parade-display .item {
+    font-size: clamp(1.6rem, 5vw, 2.6rem);
+  }
+
+  /* ===== GAME 2: COUNT THE CRITTERS ===== */
+  .count-stage {
+    flex: 1;
+    gap: 14px;
+    min-height: 0;
+  }
+  .count-area {
+    flex: 1;
+    padding: 16px;
+    gap: 12px;
+    min-height: 200px;
+    overflow: hidden;
+  }
+  .critter {
+    font-size: clamp(2.6rem, 9vw, 4.2rem);
+    filter: drop-shadow(2px 3px 0 rgba(0,0,0,0.15));
+  }
+  .critter.tapped {
+    transform: scale(1.35);
+    animation: tapped 0.6s ease forwards;
+  }
+  /* Tapped critter feedback animation */
+  @keyframes tapped {
+    0% { transform: scale(1); }
+    40% { transform: scale(1.45) rotate(15deg); }
+    100% { transform: scale(1.15) rotate(0); opacity: 0.5; filter: grayscale(0.5); }
+  }
+  .counter-bubble {
+    top: 12px; right: 16px;
+    font-size: 2.2rem;
+    background: var(--c1);
+    width: 70px; height: 70px;
+    box-shadow: 0 4px 0 var(--ink);
+    text-shadow: 2px 2px 0 rgba(0,0,0,0.18);
+  }
+
+  .answer-row {
+    gap: 10px;
+  }
+  .answer-btn {
+    width: 72px; height: 72px;
+    border-radius: 18px;
+    font-size: 2.4rem;
+    box-shadow: 0 5px 0 var(--ink);
+  }
+  .answer-btn:active { box-shadow: 0 1px 0 var(--ink); }
+  .answer-btn.wrong { background: #FFD6D6; }
+
+  .prompt-bar {
+    font-size: clamp(1.2rem, 3.5vw, 1.7rem);
+    border-radius: 18px;
+    padding: 10px 14px;
+    box-shadow: 0 4px 0 var(--ink);
+  }
+
+  /* ===== GAME 3: NUMBER HUNT ===== */
+  .hunt-stage {
+    flex: 1;
+    gap: 16px;
+    min-height: 0;
+  }
+  .hunt-target {
+    border-radius: 24px;
+    padding: 16px;
+    font-size: clamp(1.3rem, 4vw, 1.8rem);
+    gap: 14px;
+    box-shadow: 0 6px 0 var(--ink);
+  }
+  .target-num {
+    font-size: clamp(3rem, 10vw, 4.5rem);
+    width: 90px; height: 90px;
+    border-radius: 50%;
+    background: var(--c7);
+    border: 4px solid var(--ink);
+    text-shadow: 3px 3px 0 rgba(0,0,0,0.2);
+    box-shadow: 0 4px 0 var(--ink);
+    animation: pulse 1.6s ease-in-out infinite;
+  }
+  /* Gentle breathing animation for the target number */
+  @keyframes pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.08); }
+  }
+  .hunt-grid {
+    flex: 1;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    min-height: 0;
+  }
+  .hunt-tile {
+    border-radius: 22px;
+    font-size: clamp(2.5rem, 8vw, 4rem);
+    box-shadow: 0 6px 0 var(--ink);
+    text-shadow: 3px 3px 0 rgba(0,0,0,0.2);
+  }
+  .hunt-tile:active { box-shadow: 0 2px 0 var(--ink); }
+
+  /* Cheer text uses the unified red from common palette */
+  .cheer {
+    color: var(--c1);
+    text-shadow: 5px 5px 0 #fff, 5px 5px 0 2px var(--ink);
+  }
+</style>
+</head>
+<body>
+
+<!-- ===== HOME ===== -->
+<section id="home" class="screen active">
+  <h1 class="home-title">
+    <span class="wave n1">C</span><span class="n2">o</span><span class="n3">u</span><span class="n4">n</span><span class="n1">t</span>
+    <br/>
+    <span class="n2">W</span><span class="n3">i</span><span class="n4">t</span><span class="n1">h</span> <span class="n2">M</span><span class="n3">e</span><span class="n4">!</span>
+  </h1>
+  <p class="home-sub">Pick a game to play 👇</p>
+
+  <div class="menu">
+    <div class="menu-card tile1" data-goto="parade">
+      <div class="emoji">🔢</div>
+      <div>Number<br/>Parade</div>
+    </div>
+    <div class="menu-card tile2" data-goto="critters">
+      <div class="emoji">🐥</div>
+      <div>Count the<br/>Critters</div>
+    </div>
+    <div class="menu-card tile3" data-goto="hunt">
+      <div class="emoji">🎯</div>
+      <div>Number<br/>Hunt</div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== GAME 1: PARADE ===== -->
+<section id="parade" class="screen">
+  <div class="top-bar">
+    <button class="icon-btn" data-goto="home" aria-label="Home">🏠</button>
+    <div class="screen-title">Tap a Number!</div>
+    <div style="width:58px;"></div>
+  </div>
+  <div class="number-grid" id="numberGrid"></div>
+  <div class="parade-display" id="paradeDisplay">
+    <span class="parade-hint">Tap any number to see it!</span>
+  </div>
+</section>
+
+<!-- ===== GAME 2: CRITTERS ===== -->
+<section id="critters" class="screen">
+  <div class="top-bar">
+    <button class="icon-btn" data-goto="home" aria-label="Home">🏠</button>
+    <div class="screen-title">Count Them!</div>
+    <button class="icon-btn" id="critterRefresh" aria-label="New">🔄</button>
+  </div>
+  <div class="count-stage">
+    <div class="prompt-bar" id="critterPrompt">Tap each one to count!</div>
+    <div class="count-area" id="critterArea">
+      <div class="counter-bubble" id="critterCounter">0</div>
+    </div>
+    <div class="answer-row" id="critterAnswers"></div>
+  </div>
+</section>
+
+<!-- ===== GAME 3: HUNT ===== -->
+<section id="hunt" class="screen">
+  <div class="top-bar">
+    <button class="icon-btn" data-goto="home" aria-label="Home">🏠</button>
+    <div class="screen-title">Find the Number!</div>
+    <button class="icon-btn" id="huntRefresh" aria-label="New">🔄</button>
+  </div>
+  <div class="hunt-stage">
+    <div class="hunt-target">
+      Find this number:
+      <div class="target-num" id="huntTarget">5</div>
+    </div>
+    <div class="hunt-grid" id="huntGrid"></div>
+  </div>
+</section>
+
+<div class="confetti-layer" id="confettiLayer"></div>
+<div class="cheer" id="cheer">Yay!</div>
+
+<script>
+/* ================================================
+   MAIN APPLICATION LOGIC — Count With Me!
+   ================================================ */
+
+/* ===== SOUND (Web Speech API) =====
+   Uses browser speech synthesis to read numbers aloud.
+   Voice selection prefers friendly English female voices.
+*/
+const synth = window.speechSynthesis;
+let voice = null;
+function pickVoice() {
+  const voices = synth.getVoices();
+  voice = voices.find(v => /en-/i.test(v.lang) && /female|google|samantha|karen|zira/i.test(v.name))
+       || voices.find(v => /en-/i.test(v.lang))
+       || voices[0];
+}
+if (synth) {
+  pickVoice();
+  synth.onvoiceschanged = pickVoice;
+}
+function say(text, pitch = 1.4, rate = 0.95) {
+  if (!synth) return;
+  synth.cancel();
+  const u = new SpeechSynthesisUtterance(String(text));
+  if (voice) u.voice = voice;
+  u.pitch = pitch;
+  u.rate = rate;
+  u.volume = 1;
+  synth.speak(u);
+}
+
+/* ===== NAVIGATION =====
+   Clicking menu cards or home buttons switches between screens
+   and automatically starts the selected game.
+*/
+document.querySelectorAll('[data-goto]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const target = btn.dataset.goto;
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.getElementById(target).classList.add('active');
+    if (target === 'critters') newCritterRound();
+    if (target === 'hunt') newHuntRound();
+  });
+});
+
+/* ===== GAME 1: NUMBER PARADE =====
+   Tap a number tile → hear the number and see that many emojis parade.
+*/
+const emojiSets = [
+  ['🐥','🐣','🐤'], ['🐝','🐞','🦋'], ['⭐','🌟','✨'],
+  ['🍎','🍓','🍒'], ['🎈','🎀','🎁'], ['🌻','🌷','🌼'],
+  ['🐠','🐟','🐡'], ['🦄','🦋','🐢'], ['🍦','🍩','🧁'],
+  ['🌈','☀️','🌙']
+];
+const grid = document.getElementById('numberGrid');
+for (let i = 1; i <= 10; i++) {
+  const tile = document.createElement('button');
+  tile.className = 'num-tile';
+  tile.dataset.n = i;
+  tile.textContent = i;
+  tile.addEventListener('click', () => playNumber(i, tile));
+  grid.appendChild(tile);
+}
+
+  const numberWords = ['','One','Two','Three','Four','Five','Six','Seven','Eight','Nine','Ten'];
+
+function playNumber(n, tile) {
+  say(numberWords[n]);
+  tile.classList.add('tap');
+  setTimeout(() => tile.classList.remove('tap'), 200);
+  const display = document.getElementById('paradeDisplay');
+  display.innerHTML = '';
+  const set = emojiSets[(n - 1) % emojiSets.length];
+  for (let i = 0; i < n; i++) {
+    const el = document.createElement('span');
+    el.className = 'item';
+    el.textContent = set[i % set.length];
+    el.style.animationDelay = (i * 0.08) + 's';
+    display.appendChild(el);
+  }
+}
+
+/* ===== GAME 2: COUNT THE CRITTERS =====
+   Tap critters to count them, then choose the correct total from options.
+*/
+const critterArea = document.getElementById('critterArea');
+const critterCounter = document.getElementById('critterCounter');
+const critterAnswers = document.getElementById('critterAnswers');
+const critterPrompt = document.getElementById('critterPrompt');
+const critterEmojis = ['🐥','🐝','🦋','🐠','🐶','🐰','🐱','🐸','🦊','🐢','🐧','🦉'];
+let critterCount = 0;
+let critterTarget = 0;
+let critterTapped = 0;
+let critterPhase = 'counting'; // 'counting' or 'answering'
+
+function newCritterRound() {
+  critterTarget = Math.floor(Math.random() * 7) + 2; // 2..8
+  critterCount = 0;
+  critterTapped = 0;
+  critterPhase = 'counting';
+  critterCounter.textContent = '0';
+  critterPrompt.textContent = 'Tap each one to count!';
+  critterAnswers.innerHTML = '';
+  critterArea.querySelectorAll('.critter').forEach(c => c.remove());
+
+  const chosenEmoji = critterEmojis[Math.floor(Math.random() * critterEmojis.length)];
+  for (let i = 0; i < critterTarget; i++) {
+    const c = document.createElement('div');
+    c.className = 'critter';
+    c.textContent = chosenEmoji;
+    c.style.animationDelay = (-Math.random() * 3) + 's';
+    c.addEventListener('click', () => tapCritter(c));
+    critterArea.appendChild(c);
+  }
+}
+
+function tapCritter(el) {
+  if (critterPhase !== 'counting' || el.classList.contains('tapped')) return;
+  el.classList.add('tapped');
+  critterCount++;
+  critterTapped++;
+  critterCounter.textContent = critterCount;
+  say(numberWords[critterCount], 1.5, 1.1);
+
+  if (critterTapped === critterTarget) {
+    setTimeout(showAnswerChoices, 700);
+  }
+}
+
+function showAnswerChoices() {
+  critterPhase = 'answering';
+  critterPrompt.textContent = 'How many?';
+  say('How many?', 1.4, 0.95);
+
+  // 3 choices, one correct
+  const choices = new Set([critterTarget]);
+  while (choices.size < 3) {
+    const offset = (Math.random() > 0.5 ? 1 : -1) * (Math.floor(Math.random() * 3) + 1);
+    const candidate = critterTarget + offset;
+    if (candidate >= 1 && candidate <= 10) choices.add(candidate);
+  }
+  const shuffled = [...choices].sort(() => Math.random() - 0.5);
+  critterAnswers.innerHTML = '';
+  shuffled.forEach(num => {
+    const btn = document.createElement('button');
+    btn.className = 'answer-btn';
+    btn.textContent = num;
+    btn.addEventListener('click', () => checkCritterAnswer(num, btn));
+    critterAnswers.appendChild(btn);
+  });
+}
+
+function checkCritterAnswer(num, btn) {
+  if (num === critterTarget) {
+    btn.classList.add('correct');
+    say('Yes! ' + numberWords[num] + '!', 1.6, 0.95);
+    celebrate();
+    setTimeout(newCritterRound, 2200);
+  } else {
+    btn.classList.add('wrong');
+    say('Try again!', 1.4, 0.95);
+    setTimeout(() => btn.classList.remove('wrong'), 600);
+  }
+}
+
+  document.getElementById('critterRefresh').addEventListener('click', newCritterRound);
+
+/* ===== GAME 3: NUMBER HUNT =====
+   Find the highlighted target number among distractors.
+*/
+const huntTarget = document.getElementById('huntTarget');
+const huntGrid = document.getElementById('huntGrid');
+let huntAnswer = 1;
+const colors = ['var(--c1)','var(--c2)','var(--c4)','var(--c5)','var(--c6)','var(--c7)','var(--c8)','var(--c10)'];
+
+function newHuntRound() {
+  huntAnswer = Math.floor(Math.random() * 10) + 1;
+  huntTarget.textContent = huntAnswer;
+  huntTarget.style.background = colors[Math.floor(Math.random() * colors.length)];
+  huntGrid.innerHTML = '';
+
+  const choices = new Set([huntAnswer]);
+  while (choices.size < 6) {
+    choices.add(Math.floor(Math.random() * 10) + 1);
+  }
+  const arr = [...choices].sort(() => Math.random() - 0.5);
+  arr.forEach(n => {
+    const tile = document.createElement('button');
+    tile.className = 'hunt-tile';
+    tile.textContent = n;
+    tile.style.background = colors[(n - 1) % colors.length];
+    tile.addEventListener('click', () => checkHunt(n, tile));
+    huntGrid.appendChild(tile);
+  });
+
+  setTimeout(() => say('Find the ' + numberWords[huntAnswer] + '!', 1.4, 0.9), 250);
+}
+
+function checkHunt(n, tile) {
+  if (n === huntAnswer) {
+    tile.classList.add('correct');
+    say('Great job! ' + numberWords[n] + '!', 1.6, 0.95);
+    celebrate();
+    setTimeout(newHuntRound, 2200);
+  } else {
+    tile.classList.add('wrong');
+    say('Try again!', 1.4, 0.95);
+  }
+}
+
+  document.getElementById('huntRefresh').addEventListener('click', newHuntRound);
+
+/* ===== CELEBRATION =====
+   Shows big "Yay!" text + colorful confetti when player succeeds.
+*/
+const cheer = document.getElementById('cheer');
+const confettiLayer = document.getElementById('confettiLayer');
+const cheerWords = ['Yay!', 'Wow!', 'Great!', 'Woohoo!', 'Awesome!', 'Yes!'];
+const confettiColors = ['#FF6B6B','#FFD93D','#4ECDC4','#5B9FE0','#9F7AEA','#95E06C','#FF85B3','#FFA94D'];
+
+function celebrate() {
+  cheer.textContent = cheerWords[Math.floor(Math.random() * cheerWords.length)];
+  cheer.classList.add('show');
+  setTimeout(() => cheer.classList.remove('show'), 1500);
+
+  for (let i = 0; i < 50; i++) {
+    const piece = document.createElement('div');
+    piece.className = 'confetti';
+    piece.style.left = Math.random() * 100 + 'vw';
+    piece.style.background = confettiColors[Math.floor(Math.random() * confettiColors.length)];
+    piece.style.borderRadius = Math.random() > 0.5 ? '50%' : '3px';
+    piece.style.animationDuration = (1.5 + Math.random() * 1.5) + 's';
+    piece.style.animationDelay = (Math.random() * 0.3) + 's';
+    piece.style.width = piece.style.height = (8 + Math.random() * 10) + 'px';
+    confettiLayer.appendChild(piece);
+    setTimeout(() => piece.remove(), 3000);
+  }
+}
+
+/* ===== MOBILE AUDIO UNLOCK =====
+   iOS/Safari requires user interaction before speech synthesis works.
+*/
+let unlocked = false;
+document.body.addEventListener('touchstart', unlock, { once: true });
+document.body.addEventListener('click', unlock, { once: true });
+function unlock() {
+  if (unlocked) return;
+  unlocked = true;
+  const u = new SpeechSynthesisUtterance(' ');
+  u.volume = 0;
+  synth && synth.speak(u);
+}
+</script>
+</body>
+</html>

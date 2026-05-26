@@ -1,0 +1,318 @@
+/*  ============================================================
+    common_ui.css - Shared kids UI kit for consistency across pages
+    ============================================================ */
+
+/* Unified playful color palette (single source of truth for both apps) */
+:root {
+  --ink: #2B2118;
+  --cream: #FFF5DC;
+  --bg: var(--cream);
+  --paper: #FFFDF5;
+  --yellow: #FCCC3E;
+  --red: #E84A45;
+  --orange: #F4933E;
+  --green: #6BBE5A;
+  --teal: #3CB4B0;
+  --blue: #4D9DE0;
+  --purple: #A77BCC;
+  --pink: #F58FB5;
+
+  /* Rainbow for numbers, highlights, tiles */
+  --c1: var(--red);
+  --c2: var(--orange);
+  --c3: var(--yellow);
+  --c4: #95E06C;
+  --c5: var(--teal);
+  --c6: var(--blue);
+  --c7: var(--purple);
+  --c8: var(--pink);
+  --c9: #C490E4;
+  --c10: #6BCB77;
+
+  /* Menu tile backgrounds */
+  --tile1: #FFE3E3;
+  --tile2: #DFFBF1;
+  --tile3: #EDE4FF;
+
+  --font-body: 'Quicksand', sans-serif;
+}
+
+/* ------------------------------------------------------------------
+   1. RESET / BASE (now authoritative for both apps)
+   ------------------------------------------------------------------ */
+* {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+  margin: 0;
+  padding: 0;
+}
+
+html, body {
+  height: 100%;
+}
+
+body {
+  font-family: var(--font-body);
+  color: var(--ink);
+  touch-action: manipulation;
+  background:
+    radial-gradient(circle at 15% 15%, var(--bg-blob-1, rgba(232,74,69,0.08)) 0%, transparent 25%),
+    radial-gradient(circle at 85% 80%, var(--bg-blob-2, rgba(77,157,224,0.10)) 0%, transparent 25%),
+    var(--bg);
+  background-size: auto, auto, 24px 24px;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 24px 16px 32px;
+  overflow-x: hidden;
+  position: relative;
+  z-index: 1;
+}
+
+
+/* Polka-dot decorative layer (overridable per app) */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  background-image:
+    radial-gradient(circle, rgba(0,0,0,0.05) 1.5px, transparent 2px);
+  background-size: 24px 24px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ------------------------------------------------------------------
+   2. TYPOGRAPHY
+   ------------------------------------------------------------------ */
+.heading-display, h1, .home-title, .screen-title {
+  font-family: 'Lilita One', cursive;
+  letter-spacing: 1px;
+  color: var(--ink);
+}
+
+.subtitle, .category-label, .hint, .home-sub, .parade-hint, .prompt-bar {
+  font-weight: 700;
+  color: #8a7560;
+  font-size: 1.05rem;
+}
+
+/* ------------------------------------------------------------------
+   3. SHARED INTERACTIVE ELEMENTS (buttons, cards, selects)
+   ------------------------------------------------------------------ */
+.ink-border { border: 4px solid var(--ink); }
+.ink-shadow-sm { box-shadow: 0 4px 0 var(--ink); }
+.ink-shadow-md { box-shadow: 0 5px 0 var(--ink); }
+.ink-shadow-lg { box-shadow: 0 6px 0 var(--ink); }
+.ink-shadow-xl { box-shadow: 0 8px 0 var(--ink); }
+.press-transition {
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+.press-down:active,
+.press-down.tap,
+.press-down:active {
+  transform: translate(2px, 2px);
+  box-shadow: 2px 2px 0 var(--ink);
+}
+
+.icon-btn,
+.alpha-btn {
+  border: 4px solid var(--ink);
+  background: white;
+  color: var(--ink);
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  box-shadow: 4px 4px 0 var(--ink);
+  transition: transform 0.12s, box-shadow 0.12s;
+}
+.icon-btn {
+  width: 58px; height: 58px;
+  border-radius: 50%;
+  font-size: 1.8rem;
+}
+.alpha-btn {
+  width: 46px; height: 46px;
+  font-family: 'Lilita One', cursive;
+  font-size: 1.6rem;
+  border-radius: 12px;
+  border-width: 3px;
+}
+.alpha-btn:hover, .icon-btn:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 6px 6px 0 var(--ink);
+}
+.alpha-btn:active, .icon-btn:active {
+  transform: translate(2px, 2px);
+  box-shadow: 2px 2px 0 var(--ink);
+}
+.alpha-btn.active {
+  background: var(--yellow, #FCCC3E);
+  transform: scale(1.12) rotate(-4deg);
+}
+
+select {
+  font-family: var(--font-body, 'Quicksand', sans-serif);
+  font-weight: 700;
+  font-size: 1.15rem;
+  padding: 10px 22px;
+  border: 4px solid var(--ink);
+  border-radius: 16px;
+  background: white;
+  color: var(--ink);
+  cursor: pointer;
+  box-shadow: 5px 5px 0 var(--ink);
+  transition: transform 0.12s, box-shadow 0.12s;
+  appearance: none;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='14' height='10' viewBox='0 0 14 10'><path d='M1 1l6 7 6-7' stroke='%232B2118' stroke-width='2.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/></svg>");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+  padding-right: 42px;
+}
+select:hover { transform: translate(-2px, -2px); box-shadow: 7px 7px 0 var(--ink); }
+select:active { transform: translate(2px, 2px); box-shadow: 2px 2px 0 var(--ink); }
+
+.card, .menu-card, .count-area, .hunt-target, .prompt-bar {
+  background: var(--paper);
+  border: 6px solid var(--ink);
+  border-radius: 28px;
+  box-shadow: 8px 8px 0 var(--yellow), 8px 8px 0 4px var(--ink);
+  padding: 20px;
+  position: relative;
+}
+
+.menu-card.tile1 { background: var(--tile1); }
+.menu-card.tile2 { background: var(--tile2); }
+.menu-card.tile3 { background: var(--tile3); }
+
+
+/* ------------------------------------------------------------------
+   4. SHARED ANIMATIONS (standardized; pages can extend with specificity)
+   ------------------------------------------------------------------ */
+@keyframes pop {
+  0%   { transform: scale(0.6) rotate(-1deg); opacity: 0; }
+  55%  { transform: scale(1.08) rotate(2deg); opacity: 1; }
+  80%  { transform: scale(0.97) rotate(-2deg); }
+  100% { transform: scale(1) rotate(-1deg); }
+}
+.animate { animation: pop 0.45s ease-out; }
+
+@keyframes wiggle {
+  0%, 100% { transform: rotate(0deg); }
+  25% { transform: rotate(-6deg) scale(1.05); }
+  75% { transform: rotate(6deg) scale(1.05); }
+}
+.wiggle { animation: wiggle 0.5s ease-in-out; }
+
+@keyframes float {
+  0%, 100% { transform: translateY(0) rotate(-3deg); }
+  50% { transform: translateY(-12px) rotate(3deg); }
+}
+.deco {
+  position: fixed;
+  font-size: 2.4rem;
+  opacity: 0.55;
+  pointer-events: none;
+  animation: float 6s ease-in-out infinite;
+  z-index: 0;
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-6px); }
+  75% { transform: translateX(6px); }
+}
+
+@keyframes fall {
+  to { transform: translateY(110vh) rotate(720deg); }
+}
+
+/* ------------------------------------------------------------------
+   5. SHARED GAME/UI COMPONENTS
+   ------------------------------------------------------------------ */
+.stage, .screen, .count-stage, .hunt-stage {
+  width: 100%;
+  max-width: 720px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.alphabet-row, .menu, .number-grid, .hunt-grid, .answer-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  justify-content: center;
+  margin-top: 16px;
+}
+
+.hint, .parade-hint, .home-sub {
+  margin-top: 20px;
+  text-align: center;
+  font-size: 1.05rem;
+  color: #8a7560;
+  font-weight: 600;
+}
+
+.confetti-layer {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 99;
+  overflow: hidden;
+}
+.confetti {
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  top: -20px;
+  animation: fall linear forwards;
+}
+
+.cheer {
+  position: fixed;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%) scale(0);
+  font-family: 'Lilita One', cursive;
+  font-size: clamp(3rem, 12vw, 6rem);
+  color: var(--red);
+  text-shadow: 5px 5px 0 #fff, 5px 5px 0 2px var(--ink);
+  pointer-events: none;
+  z-index: 100;
+  letter-spacing: 3px;
+  transition: transform 0.4s cubic-bezier(.34,1.56,.64,1), opacity 0.4s;
+  opacity: 0;
+}
+.cheer.show {
+  transform: translate(-50%, -50%) scale(1) rotate(-5deg);
+  opacity: 1;
+}
+
+
+.correct { animation: wiggle 0.5s ease; }
+.wrong   { animation: shake 0.4s; opacity: 0.85; }
+
+.no-select { user-select: none; }
+.tappable { cursor: pointer; }
+
+/* ------------------------------------------------------------------
+   6. PER-APP OVERRIDES & MEDIA QUERIES
+   ------------------------------------------------------------------ */
+/* All colors are now defined in the shared :root above.
+   Pages should only add truly unique layout/typography rules in their <style>. */
+
+@media (max-width: 600px) {
+  body { padding: 16px 8px 24px; }
+  .deco { display: none; }
+  .card, .menu-card { padding: 16px; border-radius: 20px; }
+  .alpha-btn { width: 38px; height: 38px; font-size: 1.3rem; }
+}
+
+/* ============================================================
+   APPENDIX — Unified palette (single :root in this file)
+   ============================================================
+   Both apps now share the exact same cheerful palette.
+   --ink, --cream, --yellow, --red … --c1–c10, --tile1–3
+   Individual HTML files only keep specialized rules.
+   ============================================================ */
