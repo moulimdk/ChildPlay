@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-<title>Count With Me!</title>
+<title>🐣 Count With Me!</title>
 
 <!-- 
   PURPOSE OF THIS FILE:
@@ -263,6 +263,11 @@
 
 <!-- ===== HOME ===== -->
 <section id="home" class="screen active">
+  <!-- Root Home button (goes back to main index.html) -->
+  <div style="align-self:flex-start; margin-bottom:12px;">
+    <a href="../../index.html" class="icon-btn" aria-label="Back to Home">🏠</a>
+  </div>
+
   <h1 class="home-title">
     <span class="wave n1">C</span><span class="n2">o</span><span class="n3">u</span><span class="n4">n</span><span class="n1">t</span>
     <br/>
@@ -325,7 +330,10 @@
   <div class="hunt-stage">
     <div class="hunt-target">
       Find this number:
-      <div class="target-num" id="huntTarget">5</div>
+      <div style="display:flex; align-items:center; gap:16px; justify-content:center;">
+        <div class="target-num" id="huntTarget">5</div>
+        <button class="icon-btn listen-btn" id="listenHuntBtn" aria-label="Listen again" title="Listen">🔊</button>
+      </div>
     </div>
     <div class="hunt-grid" id="huntGrid"></div>
   </div>

@@ -32,7 +32,7 @@
     font-weight: 700;
   }
 
-  .activities-menu {
+    .activities-menu {
     width: 100%;
     max-width: 620px;
     display: flex;
@@ -41,38 +41,49 @@
     margin: 0 auto;
   }
 
-  .menu-card {
+    .menu-card {
     display: flex;
+    flex-direction: column;
     align-items: center;
-    gap: 24px;
-    padding: 24px;
+    justify-content: center;
+    gap: 20px;
+    padding: 32px 24px;
     font-size: 1.8rem;
-    text-align: left;
+    text-align: center;
     cursor: pointer;
+    min-height: 180px;
+  }
+
+  .menu-card > div {
+    text-align: center;
+    line-height: 1.3;
   }
 
   .menu-card .emoji {
-    font-size: 4rem;
-    width: 90px;
-    height: 90px;
+    font-size: 4.5rem;
+    width: 110px;
+    height: 110px;
     display: grid;
     place-items: center;
     background: var(--yellow);
     border-radius: 50%;
     flex-shrink: 0;
-    border: 5px solid var(--ink);
+    border: 6px solid var(--ink);
+    box-shadow: 6px 6px 0 var(--ink);
   }
 
   .coming-soon {
     opacity: 0.6;
     pointer-events: none;
   }
+
+
 </style>
 </head>
 <body>
 
 <div class="hero">
-  <h1>ChildPlay 🐣</h1>
+  <h1>🌱 Little Learner</h1>
   <p class="tagline">Fun learning activities for little explorers</p>
 </div>
 
@@ -81,7 +92,7 @@
   <a href="activities/letters/en.html" class="menu-card ink-border press-transition">
     <div class="emoji">🔤</div>
     <div>
-      <strong>Tappy ABC!</strong><br>
+      <strong>🐣 Tap Tap ABC! ✨</strong><br>
       <span class="subtitle">Learn letters with animals, fruits &amp; more</span>
     </div>
   </a>

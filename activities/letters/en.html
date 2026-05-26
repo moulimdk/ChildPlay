@@ -3,16 +3,16 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Tappy ABC! 🐣</title>
+<title>Tap Tap ABC! 🐣</title>
 
 <!-- 
   PURPOSE OF THIS FILE:
-  Self-contained "Tappy ABC" educational activity for preschoolers.
+  Self-contained "Tap Tap ABC" educational activity for preschoolers.
   - Links to ../../css/common_ui.css for ALL base styling, reset, typography, 
     animations (@keyframes pop/wiggle/float), components (.card, .alpha-btn, .ink-border, .deco, .cheer).
   - Inline <style> now contains ONLY layout/typography overrides specific to letters 
     (large .letter/.emoji sizing, custom .card corner dots, mobile tweaks).
-  - JavaScript handles keyboard input, letter cycling, category selection, and SpeechSynthesis is NOT used here.
+  - JavaScript handles keyboard input, letter cycling, category selection, **and now uses SpeechSynthesis** to read the word aloud when a letter is shown.
   - Uses shared color palette from common_ui.css (:root variables like --red, --yellow, --ink, --pink).
   - Goal: Teach letter recognition with animals/fruits/vehicles via fun tapping and visuals.
 -->
@@ -68,6 +68,7 @@
     min-height: 440px;
     transform: rotate(-1.2deg);
     transition: box-shadow 0.3s;
+    align-items: center;
   }
   /* Decorative corner dots on the card */
   .card::before, .card::after {
@@ -86,11 +87,13 @@
     font-size: clamp(7rem, 18vw, 13rem);
     line-height: 0.85;
     margin-bottom: 4px;
+    text-align: center;
   }
   .emoji {
     font-size: clamp(4rem, 11vw, 7rem);
     line-height: 1;
     margin: 6px 0 10px;
+    text-align: center;
   }
   .word {
     font-size: clamp(2rem, 6vw, 3.6rem);
@@ -99,6 +102,8 @@
 
   /* Progress dots showing how many variants exist for current letter */
   .dots {
+    display: flex;
+    justify-content: center;
     gap: 8px;
     margin-top: 14px;
     min-height: 10px;
@@ -152,9 +157,14 @@
 <div class="deco d3">🦋</div>
 <div class="deco d4">🌈</div>
 
+<!-- Top bar with Home button -->
+<div class="top-bar" style="width:100%; max-width:720px; justify-content:flex-start; margin-bottom:8px;">
+  <a href="../../index.html" class="icon-btn" aria-label="Back to Home">🏠</a>
+</div>
+
 <!-- Page header -->
 <header>
-  <h1>🐣 Tappy ABC! ✨</h1>
+  <h1>🐣 Tap Tap ABC! ✨</h1>
   <div class="subtitle">A little letter playground</div>
 </header>
 
@@ -175,7 +185,13 @@
   <div class="card" id="card">
     <div class="letter" id="letter">?</div>
     <div class="emoji" id="emoji">⌨️</div>
-    <div class="word" id="word">Press a letter!</div>
+    
+    <!-- Word + Listen button (replays the spoken word) -->
+    <div style="display:flex; align-items:center; gap:16px; justify-content:center; flex-wrap:wrap;">
+      <div class="word" id="word">Press a letter!</div>
+      <button class="icon-btn listen-btn" id="listenBtn" aria-label="Listen again" title="Listen">🔊</button>
+    </div>
+    
     <div class="dots" id="dots"></div>
   </div>
   <div class="hint">Press any letter (A–Z) on the keyboard. Press the same letter again for more!</div>
@@ -186,6 +202,45 @@
 /* ================================================
    MAIN APPLICATION LOGIC
    ================================================ */
+
+/* ===== SPEECH SYNTHESIS (Web Speech API) ===== */
+const synth = window.speechSynthesis;
+let voice = null;
+
+function pickVoice() {
+  const voices = synth.getVoices();
+  voice = voices.find(v => /en-/i.test(v.lang) && /female|google|samantha|karen|zira/i.test(v.name))
+       || voices.find(v => /en-/i.test(v.lang))
+       || voices[0];
+}
+
+if (synth) {
+  pickVoice();
+  synth.onvoiceschanged = pickVoice;
+}
+
+function say(text, pitch = 1.35, rate = 0.9) {
+  if (!synth) return;
+  synth.cancel();
+  const u = new SpeechSynthesisUtterance(String(text));
+  if (voice) u.voice = voice;
+  u.pitch = pitch;
+  u.rate = rate;
+  u.volume = 1;
+  synth.speak(u);
+}
+
+/* Unlock audio on first user interaction (required on iOS/Safari) */
+let unlocked = false;
+function unlockAudio() {
+  if (unlocked) return;
+  unlocked = true;
+  const u = new SpeechSynthesisUtterance(' ');
+  u.volume = 0;
+  synth && synth.speak(u);
+}
+document.body.addEventListener('touchstart', unlockAudio, { once: true });
+document.body.addEventListener('click', unlockAudio, { once: true });
 
 // Master data: category -> letter -> array of [word, emoji] pairs.
 // Pressing the same letter cycles through the array.
@@ -211,7 +266,7 @@ const DATA = {
     R: [['Rabbit','🐰'], ['Rat','🐀'], ['Rooster','🐓']],
     S: [['Snake','🐍'], ['Snail','🐌'], ['Sheep','🐑']],
     T: [['Tiger','🐯'], ['Turtle','🐢']],
-    U: [['Urchin','🦔']],
+    U: [['Urchin','']],
     V: [['Vulture','🦅']],
     W: [['Wolf','🐺'], ['Whale','🐳']],
     X: [['X-ray fish','🐠']],
@@ -270,20 +325,20 @@ const DATA = {
     U: [['UFO','🛸'], ['Unicycle','🚲']],
     V: [['Van','🚐']],
     W: [['Wagon','🛒']],
-    X: [],
+    X: [['X-wing','🚀']],
     Y: [['Yacht','⛵']],
-    Z: []
+    Z: [['Zeppelin','🛩️']]
   },
   body: {
     A: [['Arm','💪'], ['Ankle','🦶']],
     B: [['Belly','🫃']],
     C: [['Cheek','😊'], ['Chin','🙂']],
-    D: [],
+    D: [['Dimple','😊'], ['Digit','☝️']],
     E: [['Ear','👂'], ['Eye','👁️'], ['Elbow','💪']],
     F: [['Foot','🦶'], ['Finger','☝️'], ['Face','😀']],
     G: [['Gums','😬']],
     H: [['Hand','✋'], ['Head','🧑'], ['Hair','💇']],
-    I: [],
+    I: [['Iris','👁️']],
     J: [['Jaw','😬']],
     K: [['Knee','🦵']],
     L: [['Leg','🦵'], ['Lips','👄']],
@@ -295,8 +350,8 @@ const DATA = {
     R: [['Ribs','🦴']],
     S: [['Shoulder','💪']],
     T: [['Toe','🦶'], ['Tooth','🦷'], ['Tongue','👅'], ['Thumb','👍']],
-    U: [],
-    V: [],
+    U: [['Underarm','🫂']],
+    V: [['Vein','🩸']],
     W: [['Wrist','⌚']],
     X: [],
     Y: [],
@@ -308,7 +363,7 @@ const DATA = {
     C: [['Cap','🧢'], ['Coat','🧥']],
     D: [['Dress','👗'], ['Diaper','🩲']],
     E: [['Earmuffs','🎧']],
-    F: [],
+    F: [['Flip-flops','🩴'], ['Frock','👗']],
     G: [['Gloves','🧤']],
     H: [['Hat','🎩'], ['Hoodie','🧥']],
     I: [],
@@ -351,6 +406,7 @@ const dotsEl   = $('dots');
 const cardEl   = $('card');
 const categorySel = $('category');
 const alphabetEl  = $('alphabet');
+const listenBtn = $('listenBtn');
 
 // Dynamically build the A–Z button row using common .alpha-btn styles
 for (let i = 65; i <= 90; i++) {
@@ -362,6 +418,14 @@ for (let i = 65; i <= 90; i++) {
   btn.addEventListener('click', () => showLetter(letter));
   alphabetEl.appendChild(btn);
 }
+
+// Listen button replays the current word
+listenBtn.addEventListener('click', () => {
+  const currentWord = wordEl.textContent;
+  if (currentWord && currentWord !== 'Press a letter!') {
+    say(currentWord, 1.35, 0.9);
+  }
+});
 
 /**
  * Main function: display a letter, cycle examples on repeat press.
@@ -404,6 +468,11 @@ function showLetter(letter) {
   letterEl.textContent = letter;
   emojiEl.textContent  = emoji;
   wordEl.textContent   = word;
+
+  // Speak the word aloud (using the shared speech system)
+  if (word !== 'Hmm…' && word !== 'Press a letter!') {
+    say(word);
+  }
 
   // Show cycle indicator dots when multiple examples exist
   dotsEl.innerHTML = '';
