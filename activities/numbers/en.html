@@ -39,7 +39,8 @@
 
   /* Full-screen game containers (only one visible at a time) */
   .screen {
-    position: absolute; inset: 0;
+    position: relative;
+    /* inset: 0; */
     display: none;
     flex-direction: column;
     padding: 18px;
@@ -118,6 +119,7 @@
     padding: 6px;
   }
   .num-tile {
+    min-width: 80px; min-height: 80px;
     border-radius: 22px;
     font-size: clamp(2rem, 7vw, 4rem);
     color: #fff;
@@ -125,6 +127,7 @@
     text-shadow: 3px 3px 0 rgba(0,0,0,0.18);
     position: relative;
     overflow: hidden;
+    text-align: center;
   }
   .num-tile.tap {
     transform: translate(0, 5px) scale(0.97);
@@ -166,6 +169,7 @@
     padding: 16px;
     gap: 12px;
     min-height: 200px;
+    min-width: 200px;
     overflow: hidden;
   }
   .critter {
@@ -262,7 +266,7 @@
 <body>
 
 <!-- ===== HOME ===== -->
-<section id="home" class="screen active">
+<section id="home" class="screen active" style="text-align:center;">
   <!-- Root Home button (goes back to main index.html) -->
   <div style="align-self:flex-start; margin-bottom:12px;">
     <a href="../../index.html" class="icon-btn" aria-label="Back to Home">🏠</a>
@@ -276,25 +280,25 @@
   <p class="home-sub">Pick a game to play 👇</p>
 
   <div class="menu">
-    <div class="menu-card tile1" data-goto="parade">
-      <div class="emoji">🔢</div>
-      <div>Number<br/>Parade</div>
+    <div class="menu-card tile1" data-goto="parade" style="display: flex;">
+      <div class="emoji" style="display: grid;">🔢</div>
+      <div style="display: grid;">Number<br/>Parade</div>
     </div>
-    <div class="menu-card tile2" data-goto="critters">
-      <div class="emoji">🐥</div>
-      <div>Count the<br/>Critters</div>
+    <div class="menu-card tile2" data-goto="critters" style="display: flex;">
+      <div class="emoji" style="display: grid;">🐥</div>
+      <div style="display: grid;">Count the<br/>Critters</div>
     </div>
-    <div class="menu-card tile3" data-goto="hunt">
-      <div class="emoji">🎯</div>
-      <div>Number<br/>Hunt</div>
+    <div class="menu-card tile3" data-goto="hunt" style="display: flex;">
+      <div class="emoji" style="display: grid;">🎯</div>
+      <div style="display: grid;">Number<br/>Hunt</div>
     </div>
   </div>
 </section>
 
 <!-- ===== GAME 1: PARADE ===== -->
 <section id="parade" class="screen">
+  <button class="icon-btn" data-goto="home" aria-label="Home" style="align-self:flex-start; margin-bottom:12px;">🏠</button>
   <div class="top-bar">
-    <button class="icon-btn" data-goto="home" aria-label="Home">🏠</button>
     <div class="screen-title">Tap a Number!</div>
     <div style="width:58px;"></div>
   </div>
@@ -306,17 +310,16 @@
 
 <!-- ===== GAME 2: CRITTERS ===== -->
 <section id="critters" class="screen">
+  <button class="icon-btn" data-goto="home" aria-label="Home" style="align-self:flex-start; margin-bottom:12px;">🏠</button>
   <div class="top-bar">
-    <button class="icon-btn" data-goto="home" aria-label="Home">🏠</button>
     <div class="screen-title">Count Them!</div>
-    <button class="icon-btn" id="critterRefresh" aria-label="New">🔄</button>
   </div>
   <div class="count-stage">
     <div class="prompt-bar" id="critterPrompt">Tap each one to count!</div>
     <div class="count-area" id="critterArea">
       <div class="counter-bubble" id="critterCounter">0</div>
     </div>
-    <div class="answer-row" id="critterAnswers"></div>
+    <div class="answer-row" id="critterAnswers" style="display: flex;"></div>
   </div>
 </section>
 
