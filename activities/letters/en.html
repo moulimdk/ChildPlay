@@ -165,7 +165,9 @@
 <!-- Page header -->
 <header>
   <h1>🐣 Tap Tap ABC! ✨</h1>
-  <div class="subtitle">A little letter playground</div>
+  <!-- <br> -->
+  <!-- <br> -->
+  <!-- <div class="subtitle">A little letter playground</div> -->
 </header>
 
 <!-- Category selector (populated from common styles) -->
@@ -423,7 +425,7 @@ for (let i = 65; i <= 90; i++) {
 listenBtn.addEventListener('click', () => {
   const currentWord = wordEl.textContent;
   if (currentWord && currentWord !== 'Press a letter!') {
-    say(currentWord, 1.35, 0.9);
+    say(currentWord, 1.35, 0.8);
   }
 });
 

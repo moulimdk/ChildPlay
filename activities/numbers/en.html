@@ -97,8 +97,14 @@
     width: 70px; height: 70px;
     border-radius: 50%;
     flex-shrink: 0;
-    border: 3px solid var(--ink);
+    /* border: 3px solid var(--ink); */
   }
+
+  /* Floating decorative emojis */
+  .deco.d1 { top: 12%; left: 4%; animation-delay: 0s; }
+  .deco.d2 { top: 70%; left: 6%; animation-delay: 1.5s; }
+  .deco.d3 { top: 18%; right: 5%; animation-delay: 0.7s; }
+  .deco.d4 { top: 65%; right: 4%; animation-delay: 2.2s; }
 
   /* ===== TOP BAR (used by all game screens) ===== */
   .top-bar {
@@ -166,6 +172,11 @@
   }
   .count-area {
     flex: 1;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    align-content: flex-start;
+    justify-content: flex-start;
     padding: 16px;
     gap: 12px;
     min-height: 200px;
@@ -173,7 +184,11 @@
     overflow: hidden;
   }
   .critter {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     font-size: clamp(2.6rem, 9vw, 4.2rem);
+    flex-shrink: 0;
     filter: drop-shadow(2px 3px 0 rgba(0,0,0,0.15));
   }
   .critter.tapped {
@@ -265,6 +280,12 @@
 </head>
 <body>
 
+  <!-- Floating decorative elements (positioned via common .deco + inline overrides) -->
+  <div class="deco d1">🌟</div>
+  <div class="deco d2">🎈</div>
+  <div class="deco d3">🦋</div>
+  <div class="deco d4">🌈</div>
+
 <!-- ===== HOME ===== -->
 <section id="home" class="screen active" style="text-align:center;">
   <!-- Root Home button (goes back to main index.html) -->
@@ -313,11 +334,13 @@
   <button class="icon-btn" data-goto="home" aria-label="Home" style="align-self:flex-start; margin-bottom:12px;">🏠</button>
   <div class="top-bar">
     <div class="screen-title">Count Them!</div>
+    <button class="icon-btn" id="critterRefresh" aria-label="New">🔄</button>
   </div>
   <div class="count-stage">
     <div class="prompt-bar" id="critterPrompt">Tap each one to count!</div>
+    <div class="counter-bubble" id="critterCounter">0</div>
     <div class="count-area" id="critterArea">
-      <div class="counter-bubble" id="critterCounter">0</div>
+      
     </div>
     <div class="answer-row" id="critterAnswers" style="display: flex;"></div>
   </div>
@@ -325,8 +348,8 @@
 
 <!-- ===== GAME 3: HUNT ===== -->
 <section id="hunt" class="screen">
+  <button class="icon-btn" data-goto="home" aria-label="Home" style="align-self:flex-start; margin-bottom:12px;">🏠</button>
   <div class="top-bar">
-    <button class="icon-btn" data-goto="home" aria-label="Home">🏠</button>
     <div class="screen-title">Find the Number!</div>
     <button class="icon-btn" id="huntRefresh" aria-label="New">🔄</button>
   </div>
@@ -356,6 +379,9 @@
 */
 const synth = window.speechSynthesis;
 let voice = null;
+const speechQueue = [];
+let speechBusy = false;
+
 function pickVoice() {
   const voices = synth.getVoices();
   voice = voices.find(v => /en-/i.test(v.lang) && /female|google|samantha|karen|zira/i.test(v.name))
@@ -364,17 +390,47 @@ function pickVoice() {
 }
 if (synth) {
   pickVoice();
-  synth.onvoiceschanged = pickVoice;
+  synth.onvoiceschanged = () => {
+    pickVoice();
+    speakNext();
+  };
 }
-function say(text, pitch = 1.4, rate = 0.95) {
-  if (!synth) return;
+
+function speakNext() {
+  if (speechBusy || speechQueue.length === 0) return;
+  speechBusy = true;
+  const utterance = speechQueue.shift();
   synth.cancel();
+  synth.speak(utterance);
+}
+
+function resetSpeech() {
+  synth.cancel();
+  speechQueue.length = 0;
+  speechBusy = false;
+}
+
+function say(text, pitch = 1.4, rate = 0.95, onend = null) {
+  if (!synth) return;
+  const voices = synth.getVoices();
+  if (!voice && voices.length > 0) pickVoice();
   const u = new SpeechSynthesisUtterance(String(text));
   if (voice) u.voice = voice;
   u.pitch = pitch;
   u.rate = rate;
   u.volume = 1;
-  synth.speak(u);
+  u.onend = () => {
+    speechBusy = false;
+    if (typeof onend === 'function') onend();
+    speakNext();
+  };
+  u.onerror = () => {
+    speechBusy = false;
+    if (typeof onend === 'function') onend();
+    speakNext();
+  };
+  speechQueue.push(u);
+  speakNext();
 }
 
 /* ===== NAVIGATION =====
@@ -436,22 +492,42 @@ const critterCounter = document.getElementById('critterCounter');
 const critterAnswers = document.getElementById('critterAnswers');
 const critterPrompt = document.getElementById('critterPrompt');
 const critterEmojis = ['🐥','🐝','🦋','🐠','🐶','🐰','🐱','🐸','🦊','🐢','🐧','🦉'];
+const critterLabels = {
+  '🐥': { singular: 'chick', plural: 'chicks' },
+  '🐝': { singular: 'bee', plural: 'bees' },
+  '🦋': { singular: 'butterfly', plural: 'butterflies' },
+  '🐠': { singular: 'fish', plural: 'fish' },
+  '🐶': { singular: 'dog', plural: 'dogs' },
+  '🐰': { singular: 'rabbit', plural: 'rabbits' },
+  '🐱': { singular: 'cat', plural: 'cats' },
+  '🐸': { singular: 'frog', plural: 'frogs' },
+  '🦊': { singular: 'fox', plural: 'foxes' },
+  '🐢': { singular: 'turtle', plural: 'turtles' },
+  '🐧': { singular: 'penguin', plural: 'penguins' },
+  '🦉': { singular: 'owl', plural: 'owls' }
+};
 let critterCount = 0;
 let critterTarget = 0;
 let critterTapped = 0;
 let critterPhase = 'counting'; // 'counting' or 'answering'
+let currentCritterPromptLabel = 'critter';
+let currentCritterLabel = 'critters';
 
 function newCritterRound() {
+  resetSpeech();
   critterTarget = Math.floor(Math.random() * 7) + 2; // 2..8
   critterCount = 0;
   critterTapped = 0;
   critterPhase = 'counting';
   critterCounter.textContent = '0';
-  critterPrompt.textContent = 'Tap each one to count!';
   critterAnswers.innerHTML = '';
   critterArea.querySelectorAll('.critter').forEach(c => c.remove());
 
   const chosenEmoji = critterEmojis[Math.floor(Math.random() * critterEmojis.length)];
+  const chosenLabel = critterLabels[chosenEmoji] || { singular: 'critter', plural: 'critters' };
+  currentCritterPromptLabel = chosenLabel.singular;
+  currentCritterLabel = chosenLabel.plural;
+  critterPrompt.textContent = `Tap each ${currentCritterPromptLabel} to count!`;
   for (let i = 0; i < critterTarget; i++) {
     const c = document.createElement('div');
     c.className = 'critter';
@@ -468,17 +544,20 @@ function tapCritter(el) {
   critterCount++;
   critterTapped++;
   critterCounter.textContent = critterCount;
-  say(numberWords[critterCount], 1.5, 1.1);
 
   if (critterTapped === critterTarget) {
-    setTimeout(showAnswerChoices, 700);
+    say(numberWords[critterCount], 1.5, 1.1, () => {
+      setTimeout(showAnswerChoices, 250);
+    });
+  } else {
+    say(numberWords[critterCount], 1.5, 1.1);
   }
 }
 
 function showAnswerChoices() {
   critterPhase = 'answering';
-  critterPrompt.textContent = 'How many?';
-  say('How many?', 1.4, 0.95);
+  critterPrompt.textContent = `How many ${currentCritterLabel}?`;
+  say(`How many ${currentCritterLabel}?`, 1.4, 0.95);
 
   // 3 choices, one correct
   const choices = new Set([critterTarget]);
@@ -491,7 +570,8 @@ function showAnswerChoices() {
   critterAnswers.innerHTML = '';
   shuffled.forEach(num => {
     const btn = document.createElement('button');
-    btn.className = 'answer-btn';
+    btn.className = 'num-tile';
+    btn.dataset.n = num;
     btn.textContent = num;
     btn.addEventListener('click', () => checkCritterAnswer(num, btn));
     critterAnswers.appendChild(btn);
@@ -501,8 +581,8 @@ function showAnswerChoices() {
 function checkCritterAnswer(num, btn) {
   if (num === critterTarget) {
     btn.classList.add('correct');
-    say('Yes! ' + numberWords[num] + '!', 1.6, 0.95);
-    celebrate();
+    const cheerText = celebrate();
+    say(cheerText, 1.6, 0.95);
     setTimeout(newCritterRound, 2200);
   } else {
     btn.classList.add('wrong');
@@ -516,9 +596,12 @@ function checkCritterAnswer(num, btn) {
 /* ===== GAME 3: NUMBER HUNT =====
    Find the highlighted target number among distractors.
 */
+
+console.log("Number Hunt script loaded");
 const huntTarget = document.getElementById('huntTarget');
 const huntGrid = document.getElementById('huntGrid');
 let huntAnswer = 1;
+console.log(huntAnswer);
 const colors = ['var(--c1)','var(--c2)','var(--c4)','var(--c5)','var(--c6)','var(--c7)','var(--c8)','var(--c10)'];
 
 function newHuntRound() {
@@ -534,9 +617,9 @@ function newHuntRound() {
   const arr = [...choices].sort(() => Math.random() - 0.5);
   arr.forEach(n => {
     const tile = document.createElement('button');
-    tile.className = 'hunt-tile';
+    tile.className = 'num-tile';
+    tile.dataset.n = n;
     tile.textContent = n;
-    tile.style.background = colors[(n - 1) % colors.length];
     tile.addEventListener('click', () => checkHunt(n, tile));
     huntGrid.appendChild(tile);
   });
@@ -547,8 +630,8 @@ function newHuntRound() {
 function checkHunt(n, tile) {
   if (n === huntAnswer) {
     tile.classList.add('correct');
-    say('Great job! ' + numberWords[n] + '!', 1.6, 0.95);
-    celebrate();
+    const cheerText = celebrate();
+    say(cheerText, 1.6, 0.95);
     setTimeout(newHuntRound, 2200);
   } else {
     tile.classList.add('wrong');
@@ -567,7 +650,8 @@ const cheerWords = ['Yay!', 'Wow!', 'Great!', 'Woohoo!', 'Awesome!', 'Yes!'];
 const confettiColors = ['#FF6B6B','#FFD93D','#4ECDC4','#5B9FE0','#9F7AEA','#95E06C','#FF85B3','#FFA94D'];
 
 function celebrate() {
-  cheer.textContent = cheerWords[Math.floor(Math.random() * cheerWords.length)];
+  const cheerText = cheerWords[Math.floor(Math.random() * cheerWords.length)];
+  cheer.textContent = cheerText;
   cheer.classList.add('show');
   setTimeout(() => cheer.classList.remove('show'), 1500);
 
@@ -583,6 +667,7 @@ function celebrate() {
     confettiLayer.appendChild(piece);
     setTimeout(() => piece.remove(), 3000);
   }
+  return cheerText;
 }
 
 /* ===== MOBILE AUDIO UNLOCK =====
