@@ -10,7 +10,7 @@ This is a personal project that started as a way to make learning fun and access
 
 | # | Activity | Focus | Age Range | Status |
 |---|----------|-------|-----------|--------|
-| 1 | **Letters** / **অক্ষর** | Letter recognition, sounds, tracing | Toddler+ | 🟢 Live |
+| 1 | **Letters** / **অক্ষর** | Letter recognition, sounds, tracing | Toddler+ | 🟡 In progress |
 | 2 | **Numbers & Counting** / **সংখ্যা ও গণনা** | Number recognition, counting, basic quantities | Preschool+ | 🟡 In progress |
 | 3 | **Spelling** / **বানান** | Word building, simple spelling, phonics | Early elementary+ | ⚪ Planned |
 
@@ -19,7 +19,7 @@ More activities will be added as he grows. Difficulty also adapts: the Letters p
 ## 🌍 Languages
 
 - 🇬🇧 English
-- 🇧🇩 Bengali (বাংলা)
+- IN Bengali (বাংলা)
 - 🌐 *Open to adding more — whatever language he wants to explore next*
 
 Each activity page has a language toggle, so switching between versions is one click.
@@ -67,8 +67,9 @@ Then visit `http://localhost:8000`.
 
 Rough plan, subject to change based on what he actually enjoys:
 
-- [x] Letters page (English + Bengali)
-- [ ] Numbers and counting page
+- [x] Letters page (English)
+- [] Letters page (Bengali)
+- [x] Numbers and counting page (English)
 - [ ] Spelling page
 - [ ] Audio pronunciation for every letter and word
 - [ ] Simple matching / drag-and-drop games
