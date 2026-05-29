@@ -129,8 +129,12 @@ body::before {
   background: white;
   color: var(--ink);
   cursor: pointer;
-  display: grid;
-  place-items: center;
+  /* Flex + explicit centering is more reliable than grid/place-items for custom web fonts (Lilita One) + emoji/letters inside circles */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  line-height: 1;
   box-shadow: 4px 4px 0 var(--ink);
   transition: transform 0.12s, box-shadow 0.12s;
 }
@@ -143,8 +147,9 @@ body::before {
   width: 46px; height: 46px;
   font-family: 'Lilita One', cursive;
   font-size: 1.6rem;
-  border-radius: 12px;
+  border-radius: 50%;   /* true circles for the A–Z keyboard */
   border-width: 3px;
+  line-height: 1;      /* belt-and-suspenders for perfect vertical centering with the custom font */
 }
 .alpha-btn:hover, .icon-btn:hover {
   transform: translate(-2px, -2px);

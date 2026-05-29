@@ -85,19 +85,37 @@
   }
 
   .menu-card {
+    position: relative;      /* allows absolute positioning of the emoji on the left */
     padding: 20px 22px;
-    gap: 18px;
     font-size: clamp(1.4rem, 4vw, 2rem);
     letter-spacing: 1px;
     box-shadow: 0 8px 0 var(--ink);
   }
   .menu-card:active { transform: translate(0, 6px); box-shadow: 0 2px 0 var(--ink); }
   .menu-card .emoji {
+    position: absolute;
+    left: 22px;                    /* aligns with the card's left padding */
+    top: 50%;
+    transform: translateY(-50%);
     font-size: clamp(2.4rem, 6vw, 3.2rem);
     width: 70px; height: 70px;
     border-radius: 50%;
-    flex-shrink: 0;
     /* border: 3px solid var(--ink); */
+  }
+
+  /* The text labels are now centered within the full width of the menu card.
+     The emoji is absolutely positioned on the left so it doesn't push the text off-center.
+     padding-left clears space for the emoji. */
+  .menu-card > div:not(.emoji) {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    line-height: 1.15;
+    padding-left: 95px;     /* enough to clear the absolutely positioned emoji on the left */
+    padding-right: 10px;    /* small breathing room on the right */
   }
 
   /* Floating decorative emojis */
@@ -108,6 +126,8 @@
 
   /* ===== TOP BAR (used by all game screens) ===== */
   .top-bar {
+    display: flex;
+    align-items: center;
     gap: 12px;
     margin-bottom: 14px;
   }
@@ -169,6 +189,7 @@
     flex: 1;
     gap: 14px;
     min-height: 0;
+    position: relative;   /* needed for absolute-positioned counter bubble */
   }
   .count-area {
     flex: 1;
@@ -202,10 +223,16 @@
     100% { transform: scale(1.15) rotate(0); opacity: 0.5; filter: grayscale(0.5); }
   }
   .counter-bubble {
+    position: absolute;
     top: 12px; right: 16px;
     font-size: 2.2rem;
     background: var(--c1);
     width: 70px; height: 70px;
+    border-radius: 50%; /* ensure perfect circle */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
     box-shadow: 0 4px 0 var(--ink);
     text-shadow: 2px 2px 0 rgba(0,0,0,0.18);
   }
@@ -251,6 +278,13 @@
     text-shadow: 3px 3px 0 rgba(0,0,0,0.2);
     box-shadow: 0 4px 0 var(--ink);
     animation: pulse 1.6s ease-in-out infinite;
+
+    /* Fix horizontal centering of the digit inside the circle (vertical was already decent) */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+    text-align: center;
   }
   /* Gentle breathing animation for the target number */
   @keyframes pulse {
@@ -301,17 +335,17 @@
   <p class="home-sub">Pick a game to play 👇</p>
 
   <div class="menu">
-    <div class="menu-card tile1" data-goto="parade" style="display: flex;">
-      <div class="emoji" style="display: grid;">🔢</div>
-      <div style="display: grid;">Number<br/>Parade</div>
+    <div class="menu-card tile1" data-goto="parade">
+      <div class="emoji" style="display: flex; align-items: center; justify-content: center; line-height: 1;">🔢</div>
+      <div>Number<br/>Parade</div>
     </div>
-    <div class="menu-card tile2" data-goto="critters" style="display: flex;">
-      <div class="emoji" style="display: grid;">🐥</div>
-      <div style="display: grid;">Count the<br/>Critters</div>
+    <div class="menu-card tile2" data-goto="critters">
+      <div class="emoji" style="display: flex; align-items: center; justify-content: center; line-height: 1;">🐥</div>
+      <div>Count the<br/>Critters</div>
     </div>
-    <div class="menu-card tile3" data-goto="hunt" style="display: flex;">
-      <div class="emoji" style="display: grid;">🎯</div>
-      <div style="display: grid;">Number<br/>Hunt</div>
+    <div class="menu-card tile3" data-goto="hunt">
+      <div class="emoji" style="display: flex; align-items: center; justify-content: center; line-height: 1;">🎯</div>
+      <div>Number<br/>Hunt</div>
     </div>
   </div>
 </section>
@@ -640,6 +674,13 @@ function checkHunt(n, tile) {
 }
 
   document.getElementById('huntRefresh').addEventListener('click', newHuntRound);
+
+  // Wire up the listen button in Number Hunt (was missing entirely)
+  document.getElementById('listenHuntBtn').addEventListener('click', () => {
+    if (typeof huntAnswer !== 'undefined' && huntAnswer > 0) {
+      say(numberWords[huntAnswer], 1.4, 0.9);
+    }
+  });
 
 /* ===== CELEBRATION =====
    Shows big "Yay!" text + colorful confetti when player succeeds.

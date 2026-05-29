@@ -205,9 +205,11 @@
    MAIN APPLICATION LOGIC
    ================================================ */
 
-/* ===== SPEECH SYNTHESIS (Web Speech API) ===== */
+/* ===== SPEECH SYNTHESIS (Web Speech API) — queued version for low latency ===== */
 const synth = window.speechSynthesis;
 let voice = null;
+const speechQueue = [];
+let speechBusy = false;
 
 function pickVoice() {
   const voices = synth.getVoices();
@@ -218,18 +220,47 @@ function pickVoice() {
 
 if (synth) {
   pickVoice();
-  synth.onvoiceschanged = pickVoice;
+  synth.onvoiceschanged = () => { pickVoice(); speakNext(); };
 }
 
-function say(text, pitch = 1.35, rate = 0.9) {
-  if (!synth) return;
+function speakNext() {
+  if (speechBusy || speechQueue.length === 0) return;
+  speechBusy = true;
+  const utterance = speechQueue.shift();
   synth.cancel();
+  synth.speak(utterance);
+}
+
+function resetSpeech() {
+  synth.cancel();
+  speechQueue.length = 0;
+  speechBusy = false;
+}
+
+function say(text, pitch = 1.35, rate = 0.9, onend = null) {
+  if (!synth) return;
+  const voices = synth.getVoices();
+  if (!voice && voices.length > 0) pickVoice();
+
   const u = new SpeechSynthesisUtterance(String(text));
   if (voice) u.voice = voice;
   u.pitch = pitch;
   u.rate = rate;
   u.volume = 1;
-  synth.speak(u);
+
+  u.onend = () => {
+    speechBusy = false;
+    if (typeof onend === 'function') onend();
+    speakNext();
+  };
+  u.onerror = () => {
+    speechBusy = false;
+    if (typeof onend === 'function') onend();
+    speakNext();
+  };
+
+  speechQueue.push(u);
+  speakNext();
 }
 
 /* Unlock audio on first user interaction (required on iOS/Safari) */
@@ -434,6 +465,7 @@ listenBtn.addEventListener('click', () => {
  * Updates card shadow with color, triggers pop animation, shows dots if multiple examples.
  */
 function showLetter(letter) {
+  resetSpeech();
   letter = letter.toUpperCase();
   if (!/^[A-Z]$/.test(letter)) return;
 
@@ -508,6 +540,7 @@ document.addEventListener('keydown', (e) => {
 
 // Update category and refresh current letter display
 categorySel.addEventListener('change', (e) => {
+  resetSpeech();
   currentCategory = e.target.value;
   if (currentLetter) {
     const prev = currentLetter;
