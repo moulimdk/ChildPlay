@@ -36,9 +36,9 @@ little-learner/
 │   ├── numbers/            # Activity 2: Numbers & Counting
 │   │   ├── en.html
 │   │   └── bn.html
-│   └── spelling/           # Activity 3: Spelling
-│       ├── en.html
-│       └── bn.html
+|   ├── letter hunt/        # Activity 3: Letters Hunt
+│   │   ├── en.html
+│   │   └── bn.html
 ├── assets/
 │   ├── images/
 │   ├── audio/              # Pronunciation clips
@@ -50,7 +50,7 @@ little-learner/
 ## 🚀 Viewing the Site
 
 The site is hosted on **GitHub Pages**:
-👉 [https://yourusername.github.io/little-learner](https://moulimdk.github.io/little-learner)
+👉 [https://moulimdk.github.io/little-learner](https://moulimdk.github.io/little-learner)
 
 To run locally, clone the repo and open `index.html` in a browser:
 
@@ -67,8 +67,8 @@ Then visit `http://localhost:8000`.
 
 Rough plan, subject to change based on what he actually enjoys:
 
-- [x] Letters page (English)
-- [] Letters page (Bengali)
+- [x] Letters page (Alphabets, Hunt) (English)
+- [ ] Letters page (Bengali)
 - [x] Numbers and counting page (English)
 - [ ] Spelling page
 - [ ] Audio pronunciation for every letter and word
