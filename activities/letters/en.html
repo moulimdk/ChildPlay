@@ -456,6 +456,7 @@ for (let i = 65; i <= 90; i++) {
 listenBtn.addEventListener('click', () => {
   const currentWord = wordEl.textContent;
   if (currentWord && currentWord !== 'Press a letter!') {
+    say(letterEl.textContent, 1.35, 0.8);
     say(currentWord, 1.35, 0.8);
   }
 });
@@ -464,6 +465,16 @@ listenBtn.addEventListener('click', () => {
  * Main function: display a letter, cycle examples on repeat press.
  * Updates card shadow with color, triggers pop animation, shows dots if multiple examples.
  */
+let shuffledItems = [];
+function shuffle(arr) {
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
 function showLetter(letter) {
   resetSpeech();
   letter = letter.toUpperCase();
@@ -475,9 +486,11 @@ function showLetter(letter) {
   } else {
     currentLetter = letter;
     currentIndex = 0;
+    // Fresh random order each time a letter is opened
+    shuffledItems = shuffle((DATA[currentCategory] && DATA[currentCategory][letter]) || []);
   }
 
-  const items = (DATA[currentCategory] && DATA[currentCategory][letter]) || [];
+  const items = shuffledItems;
   let word, emoji;
   if (items.length === 0) {
     word = 'Hmm…';
@@ -505,6 +518,7 @@ function showLetter(letter) {
 
   // Speak the word aloud (using the shared speech system)
   if (word !== 'Hmm…' && word !== 'Press a letter!') {
+    say(letter);
     say(word);
   }
 
