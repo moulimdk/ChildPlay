@@ -50,7 +50,7 @@ little-learner/
 ## 🚀 Viewing the Site
 
 The site is hosted on **GitHub Pages**:
-👉 [https://yourusername.github.io/little-learner](https://yourusername.github.io/little-learner)
+👉 [https://yourusername.github.io/little-learner](https://moulimdk.github.io/little-learner)
 
 To run locally, clone the repo and open `index.html` in a browser:
 
