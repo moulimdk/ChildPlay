@@ -371,8 +371,7 @@
     <button class="icon-btn" id="critterRefresh" aria-label="New">🔄</button>
   </div>
   <div class="count-stage">
-    <div class="prompt-bar" id="critterPrompt">Tap each one to count!</div>
-    <div class="counter-bubble" id="critterCounter">0</div>
+    <div class="prompt-bar" id="critterPrompt">How many?</div>
     <div class="count-area" id="critterArea">
       
     </div>
@@ -522,7 +521,6 @@ function playNumber(n, tile) {
    Tap critters to count them, then choose the correct total from options.
 */
 const critterArea = document.getElementById('critterArea');
-const critterCounter = document.getElementById('critterCounter');
 const critterAnswers = document.getElementById('critterAnswers');
 const critterPrompt = document.getElementById('critterPrompt');
 const critterEmojis = ['🐥','🐝','🦋','🐠','🐶','🐰','🐱','🐸','🦊','🐢','🐧','🦉'];
@@ -540,56 +538,29 @@ const critterLabels = {
   '🐧': { singular: 'penguin', plural: 'penguins' },
   '🦉': { singular: 'owl', plural: 'owls' }
 };
-let critterCount = 0;
 let critterTarget = 0;
-let critterTapped = 0;
-let critterPhase = 'counting'; // 'counting' or 'answering'
-let currentCritterPromptLabel = 'critter';
 let currentCritterLabel = 'critters';
 
 function newCritterRound() {
   resetSpeech();
   critterTarget = Math.floor(Math.random() * 7) + 2; // 2..8
-  critterCount = 0;
-  critterTapped = 0;
-  critterPhase = 'counting';
-  critterCounter.textContent = '0';
   critterAnswers.innerHTML = '';
   critterArea.querySelectorAll('.critter').forEach(c => c.remove());
 
   const chosenEmoji = critterEmojis[Math.floor(Math.random() * critterEmojis.length)];
   const chosenLabel = critterLabels[chosenEmoji] || { singular: 'critter', plural: 'critters' };
-  currentCritterPromptLabel = chosenLabel.singular;
   currentCritterLabel = chosenLabel.plural;
-  critterPrompt.textContent = `Tap each ${currentCritterPromptLabel} to count!`;
   for (let i = 0; i < critterTarget; i++) {
     const c = document.createElement('div');
     c.className = 'critter';
     c.textContent = chosenEmoji;
     c.style.animationDelay = (-Math.random() * 3) + 's';
-    c.addEventListener('click', () => tapCritter(c));
     critterArea.appendChild(c);
   }
-}
-
-function tapCritter(el) {
-  if (critterPhase !== 'counting' || el.classList.contains('tapped')) return;
-  el.classList.add('tapped');
-  critterCount++;
-  critterTapped++;
-  critterCounter.textContent = critterCount;
-
-  if (critterTapped === critterTarget) {
-    say(numberWords[critterCount], 1.5, 1.1, () => {
-      setTimeout(showAnswerChoices, 250);
-    });
-  } else {
-    say(numberWords[critterCount], 1.5, 1.1);
-  }
+  showAnswerChoices();
 }
 
 function showAnswerChoices() {
-  critterPhase = 'answering';
   critterPrompt.textContent = `How many ${currentCritterLabel}?`;
   say(`How many ${currentCritterLabel}?`, 1.4, 0.95);
 

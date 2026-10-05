@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>🥚 Letter Hunt!</title>
+
+<!--
+  PURPOSE OF THIS FILE:
+  Self-contained "Letter Hunt" activity (English). An egg hunt for letters:
+  - Each round speaks a target letter ("Find the letter B!") in capital or small form.
+  - White eggs with letters are scattered across a grassy field; 6 carry the target letter.
+  - Correct tap: egg turns green + a new simple word containing the letter is shown (every instance underlined) and read aloud.
+  - Wrong tap: egg flashes red and a gentle "try again" is spoken.
+  - Finding all 6 triggers a celebration, then a new letter.
+  Uses ../../css/common_ui.css for shared styling and the Web Speech API for voice.
+-->
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Lilita+One&family=Quicksand:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../css/common_ui.css">
+
+<style>
+  body { padding-bottom: 20px; }
+
+  .page {
+    width: 100%;
+    max-width: 760px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    min-height: 0;
+  }
+
+  .top-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+  .screen-title {
+    font-family: 'Lilita One', cursive;
+    font-size: clamp(1.6rem, 6vw, 2.4rem);
+    color: var(--red);
+    text-shadow: 3px 3px 0 var(--yellow), 4px 4px 0 var(--ink);
+  }
+
+  .prompt-bar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    flex-wrap: wrap;
+    background: var(--paper);
+    border: 4px solid var(--ink);
+    border-radius: 20px;
+    box-shadow: 0 5px 0 var(--ink);
+    padding: 8px 16px;
+    font-family: 'Lilita One', cursive;
+    font-size: clamp(1.3rem, 4.5vw, 1.9rem);
+  }
+  .prompt-letter {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 64px;
+    height: 64px;
+    padding: 0 8px;
+    border-radius: 16px;
+    background: var(--yellow);
+    border: 4px solid var(--ink);
+    font-size: 2.8rem;
+    line-height: 1;
+  }
+  .prompt-case { font-size: 0.9rem; color: #8a7560; font-family: var(--font-body); font-weight: 700; display: block; text-align: center; }
+
+  .progress { display: flex; gap: 6px; justify-content: center; }
+  .progress .pip {
+    width: 16px; height: 20px;
+    border: 3px solid var(--ink);
+    border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+    background: white;
+    transition: background 0.2s;
+  }
+  .progress .pip.on { background: var(--green); }
+
+  .word-bar {
+    min-height: 74px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--paper);
+    border: 4px dashed var(--ink);
+    border-radius: 20px;
+    font-family: 'Lilita One', cursive;
+    font-size: clamp(2rem, 9vw, 3.4rem);
+    letter-spacing: 3px;
+    color: var(--ink);
+    padding: 4px 12px;
+  }
+  .word-bar.hint { font-family: var(--font-body); font-weight: 700; font-size: 1.1rem; letter-spacing: 0; color: #8a7560; }
+  .word-bar u {
+    text-decoration-line: underline;
+    text-decoration-thickness: 5px;
+    text-underline-offset: 6px;
+    text-decoration-color: var(--red);
+  }
+  .word-bar.pop { animation: pop 0.4s ease; }
+
+  .field {
+    position: relative;
+    flex: 1;
+    min-height: 320px;
+    border: 5px solid var(--ink);
+    border-radius: 24px;
+    box-shadow: 6px 6px 0 var(--ink);
+    background:
+      radial-gradient(circle at 20% 25%, rgba(255,255,255,0.35) 0 6px, transparent 7px),
+      radial-gradient(circle at 75% 60%, rgba(255,255,255,0.35) 0 5px, transparent 6px),
+      radial-gradient(circle at 40% 85%, rgba(255,255,255,0.35) 0 7px, transparent 8px),
+      #A8DC8A;
+    overflow: hidden;
+  }
+
+  .egg {
+    position: absolute;
+    border: 4px solid var(--ink);
+    border-radius: 50% 50% 50% 50% / 62% 62% 38% 38%;
+    background: #fff;
+    box-shadow: 3px 4px 0 rgba(43,33,24,0.55);
+    font-family: 'Lilita One', cursive;
+    color: var(--ink);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+    cursor: pointer;
+    padding: 0;
+    transform: rotate(var(--rot, 0deg));
+    transition: transform 0.15s, background 0.15s;
+    animation: pop 0.45s ease backwards;
+  }
+  .egg:active { transform: scale(0.93) rotate(var(--rot, 0deg)); }
+  .egg.found { background: var(--green); pointer-events: none; transform: scale(1.08) rotate(var(--rot, 0deg)); }
+  .egg.oops { background: var(--red); animation: shake 0.4s ease; }
+
+  .deco-note { text-align: center; font-weight: 700; color: #8a7560; font-size: 0.95rem; }
+</style>
+</head>
+<body>
+
+<div class="page">
+  <div class="top-bar">
+    <a href="../../index.html" class="icon-btn" aria-label="Back to Home">🏠</a>
+    <div class="screen-title">🥚 Letter Hunt!</div>
+    <button class="icon-btn" id="skipBtn" aria-label="New letter" title="New letter">🔄</button>
+  </div>
+
+  <div class="prompt-bar">
+    <span>Find the letter</span>
+    <span>
+      <span class="prompt-letter" id="targetLetter">?</span>
+      <span class="prompt-case" id="targetCase"></span>
+    </span>
+    <button class="icon-btn listen-btn" id="listenBtn" aria-label="Listen again" title="Listen">🔊</button>
+  </div>
+
+  <div class="progress" id="progress"></div>
+  <div class="word-bar hint" id="wordBar">Tap the eggs with the letter!</div>
+
+  <div class="field" id="field"></div>
+</div>
+
+<div class="confetti-layer" id="confettiLayer"></div>
+<div class="cheer" id="cheer">Yay!</div>
+
+<script>
+/* ===== SPEECH (Web Speech API, queued) ===== */
+const synth = window.speechSynthesis;
+let voice = null;
+const speechQueue = [];
+let speechBusy = false;
+
+function pickVoice() {
+  if (!synth) return;
+  const voices = synth.getVoices();
+  voice = voices.find(v => /en-/i.test(v.lang) && /female|google|samantha|karen|zira/i.test(v.name))
+       || voices.find(v => /en-/i.test(v.lang))
+       || voices[0];
+}
+if (synth) {
+  pickVoice();
+  synth.onvoiceschanged = () => { pickVoice(); speakNext(); };
+}
+function speakNext() {
+  if (speechBusy || speechQueue.length === 0) return;
+  speechBusy = true;
+  const u = speechQueue.shift();
+  synth.cancel();
+  synth.speak(u);
+}
+function resetSpeech() {
+  if (!synth) return;
+  synth.cancel();
+  speechQueue.length = 0;
+  speechBusy = false;
+}
+function say(text, pitch = 1.3, rate = 0.9, onend = null) {
+  if (!synth) { if (onend) setTimeout(onend, 600); return; }
+  if (!voice && synth.getVoices().length > 0) pickVoice();
+  const u = new SpeechSynthesisUtterance(String(text));
+  if (voice) u.voice = voice;
+  u.pitch = pitch; u.rate = rate; u.volume = 1;
+  const done = () => { speechBusy = false; if (onend) onend(); speakNext(); };
+  u.onend = done; u.onerror = done;
+  speechQueue.push(u);
+  speakNext();
+}
+/* iOS/Safari needs a user gesture before speech works */
+let unlocked = false;
+function unlockAudio() {
+  if (unlocked || !synth) return;
+  unlocked = true;
+  const u = new SpeechSynthesisUtterance(' ');
+  u.volume = 0;
+  synth.speak(u);
+}
+document.body.addEventListener('touchstart', unlockAudio, { once: true });
+document.body.addEventListener('click', unlockAudio, { once: true });
+
+/* ===== DATA: simple words containing each letter (at least 6 per letter) ===== */
+const WORDS = {
+  A: ['apple','ant','cat','bat','hat','cap','bag','jam','arm'],
+  B: ['ball','bubble','bib','bed','bus','book','bee','crab'],
+  C: ['cat','cup','cow','car','cake','cap','cookie','circus'],
+  D: ['dog','duck','door','drum','bed','doll','dad','dinosaur'],
+  E: ['egg','elephant','bed','hen','pen','net','tree','leg'],
+  F: ['fish','frog','fan','fork','leaf','fire','farm','fox'],
+  G: ['goat','gift','grapes','girl','bag','dog','frog','pig'],
+  H: ['hat','horse','house','hen','hand','hippo','fish','hug'],
+  I: ['igloo','insect','pig','fish','ink','kid','milk','six'],
+  J: ['jam','jet','jump','juice','jelly','jar','jeep','jacket'],
+  K: ['kite','king','key','kitten','kangaroo','duck','milk','book'],
+  L: ['lion','lamp','leaf','ball','leg','lemon','doll','bell'],
+  M: ['moon','mouse','monkey','milk','drum','farm','mom','map'],
+  N: ['nest','nose','net','nut','banana','sun','pen','hen'],
+  O: ['orange','octopus','owl','dog','boat','frog','ox','sock'],
+  P: ['pig','panda','pizza','pear','puppy','apple','cup','pen'],
+  Q: ['queen','quilt','quack','quiet','quiz','square','squirrel'],
+  R: ['rabbit','rain','rose','ring','robot','star','car','tree'],
+  S: ['sun','star','snake','sock','bus','fish','sand','house'],
+  T: ['tiger','tree','table','cat','hat','star','toy','tent'],
+  U: ['umbrella','up','bus','cup','sun','duck','drum','bubble'],
+  V: ['van','vase','vest','violin','volcano','seven','river','glove'],
+  W: ['water','web','watch','worm','window','wolf','snow','flower'],
+  X: ['fox','box','six','taxi','axe','mix','wax','ox'],
+  Y: ['yoyo','yellow','yak','yes','yarn','yummy','toy','sky'],
+  Z: ['zebra','zoo','zip','pizza','buzz','zero','puzzle','lazy']
+};
+const LETTERS = Object.keys(WORDS);
+const TARGET_EGGS = 6;
+const DECOY_EGGS = 8;
+const CHEERS = ['Yay!', 'Wow!', 'Great!', 'Woohoo!', 'Awesome!', 'Hooray!'];
+const CONFETTI = ['#FF6B6B','#FFD93D','#4ECDC4','#5B9FE0','#9F7AEA','#95E06C','#FF85B3','#FFA94D'];
+
+/* ===== HELPERS ===== */
+const $ = id => document.getElementById(id);
+const fieldEl = $('field'), wordBar = $('wordBar'), progressEl = $('progress');
+const targetLetterEl = $('targetLetter'), targetCaseEl = $('targetCase');
+
+function shuffle(arr) {
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+/* Deck of (letter, case) targets so every letter/case shows up before repeating */
+let deck = [];
+function nextTarget(prevLetter) {
+  if (deck.length === 0) {
+    deck = shuffle(LETTERS.flatMap(l => [{ letter: l, upper: true }, { letter: l, upper: false }]));
+  }
+  let i = deck.findIndex(t => t.letter !== prevLetter);
+  if (i < 0) i = 0;
+  return deck.splice(i, 1)[0];
+}
+
+/* Word queues per letter so words rotate and don't repeat soon */
+const wordQueues = {};
+function pickWords(letter, n) {
+  const picked = [];
+  while (picked.length < n) {
+    if (!wordQueues[letter] || wordQueues[letter].length === 0) wordQueues[letter] = shuffle(WORDS[letter]);
+    const w = wordQueues[letter].shift();
+    if (!picked.includes(w)) picked.push(w);
+    else if (wordQueues[letter].length === 0 && picked.length >= WORDS[letter].length) break;
+  }
+  return picked;
+}
+
+/* ===== GAME STATE ===== */
+let round = { letter: 'A', upper: true, words: [], found: 0, locked: false };
+let roundTimer = null;
+
+function targetText() { return round.upper ? round.letter : round.letter.toLowerCase(); }
+
+function promptSpeech() {
+  resetSpeech();
+  say(`Find the letter ${targetText()}!`, 1.3, 0.85);
+}
+
+function renderProgress() {
+  progressEl.innerHTML = '';
+  for (let i = 0; i < TARGET_EGGS; i++) {
+    const p = document.createElement('div');
+    p.className = 'pip' + (i < round.found ? ' on' : '');
+    progressEl.appendChild(p);
+  }
+}
+
+/* Show a word with every instance of the target letter underlined */
+function showWord(word) {
+  const letter = round.letter;
+  wordBar.classList.remove('hint', 'pop');
+  wordBar.innerHTML = '';
+  const shown = round.upper ? word.toUpperCase() : word.toLowerCase();
+  for (const ch of shown) {
+    if (ch.toUpperCase() === letter) {
+      const u = document.createElement('u');
+      u.textContent = ch;
+      wordBar.appendChild(u);
+    } else {
+      wordBar.appendChild(document.createTextNode(ch));
+    }
+  }
+  void wordBar.offsetWidth;
+  wordBar.classList.add('pop');
+}
+
+/* ===== EGG FIELD ===== */
+function buildEggs() {
+  fieldEl.innerHTML = '';
+  const others = LETTERS.filter(l => l !== round.letter);
+  const labels = [];
+  for (let i = 0; i < TARGET_EGGS; i++) labels.push({ text: targetText(), target: true, word: round.words[i] });
+  for (let i = 0; i < DECOY_EGGS; i++) {
+    const l = others[Math.floor(Math.random() * others.length)];
+    labels.push({ text: Math.random() < 0.5 ? l : l.toLowerCase(), target: false });
+  }
+  shuffle(labels).forEach((info, i) => {
+    const egg = document.createElement('button');
+    egg.className = 'egg';
+    egg.type = 'button';
+    egg.textContent = info.text;
+    egg.setAttribute('aria-label', 'Egg with letter ' + info.text);
+    egg.style.animationDelay = (i * 0.04) + 's';
+    egg.addEventListener('click', () => tapEgg(egg, info));
+    fieldEl.appendChild(egg);
+  });
+  layoutEggs();
+}
+
+/* Scatter eggs using a jittered grid: looks random but never overlaps */
+function layoutEggs() {
+  const eggs = [...fieldEl.querySelectorAll('.egg')];
+  if (!eggs.length) return;
+  const W = fieldEl.clientWidth, H = fieldEl.clientHeight;
+  let ew = W < 480 ? 62 : 80;
+  let eh = Math.round(ew * 1.25);
+  let cols, rows;
+  for (;;) {
+    cols = Math.max(1, Math.floor(W / (ew + 10)));
+    rows = Math.max(1, Math.floor(H / (eh + 10)));
+    if (cols * rows >= eggs.length || ew <= 40) break;
+    ew -= 4; eh = Math.round(ew * 1.25);
+  }
+  const cellW = W / cols, cellH = H / rows;
+  const cells = shuffle(Array.from({ length: cols * rows }, (_, i) => i)).slice(0, eggs.length);
+  eggs.forEach((egg, i) => {
+    const c = cells[i] % cols, r = Math.floor(cells[i] / cols);
+    const slackX = Math.max(0, cellW - ew - 4), slackY = Math.max(0, cellH - eh - 4);
+    const x = c * cellW + 2 + Math.random() * slackX;
+    const y = r * cellH + 2 + Math.random() * slackY;
+    const rot = Math.round(Math.random() * 24 - 12);
+    egg.style.setProperty('--rot', rot + 'deg');
+    egg.style.width = ew + 'px';
+    egg.style.height = eh + 'px';
+    egg.style.fontSize = Math.round(ew * 0.55) + 'px';
+    egg.style.left = x + 'px';
+    egg.style.top = y + 'px';
+  });
+}
+let resizeTimer;
+window.addEventListener('resize', () => { clearTimeout(resizeTimer); resizeTimer = setTimeout(layoutEggs, 150); });
+
+function tapEgg(egg, info) {
+  if (round.locked || egg.classList.contains('found')) return;
+  if (info.target) {
+    egg.classList.add('found');
+    round.found++;
+    renderProgress();
+    showWord(info.word);
+    resetSpeech();
+    if (round.found === TARGET_EGGS) {
+      round.locked = true;
+      say(info.word, 1.3, 0.85, () => {
+        const cheer = celebrate();
+        say(cheer + ' You found them all!', 1.5, 0.95);
+        roundTimer = setTimeout(newRound, 3200);
+      });
+    } else {
+      say(info.word, 1.3, 0.85);
+    }
+  } else {
+    egg.classList.remove('oops');
+    void egg.offsetWidth;
+    egg.classList.add('oops');
+    setTimeout(() => egg.classList.remove('oops'), 700);
+    resetSpeech();
+    say('Try again', 1.15, 0.8);
+  }
+}
+
+/* ===== CELEBRATE ===== */
+const cheerEl = $('cheer'), confettiLayer = $('confettiLayer');
+function celebrate() {
+  const text = CHEERS[Math.floor(Math.random() * CHEERS.length)];
+  cheerEl.textContent = text;
+  cheerEl.classList.add('show');
+  setTimeout(() => cheerEl.classList.remove('show'), 1800);
+  for (let i = 0; i < 60; i++) {
+    const p = document.createElement('div');
+    p.className = 'confetti';
+    p.style.left = Math.random() * 100 + 'vw';
+    p.style.background = CONFETTI[Math.floor(Math.random() * CONFETTI.length)];
+    p.style.borderRadius = Math.random() > 0.5 ? '50%' : '3px';
+    p.style.animationDuration = (1.5 + Math.random() * 1.5) + 's';
+    p.style.animationDelay = (Math.random() * 0.3) + 's';
+    p.style.width = p.style.height = (8 + Math.random() * 10) + 'px';
+    confettiLayer.appendChild(p);
+    setTimeout(() => p.remove(), 3200);
+  }
+  return text;
+}
+
+/* ===== ROUNDS ===== */
+function newRound() {
+  clearTimeout(roundTimer);
+  const t = nextTarget(round.letter);
+  round = { letter: t.letter, upper: t.upper, words: pickWords(t.letter, TARGET_EGGS), found: 0, locked: false };
+  targetLetterEl.textContent = targetText();
+  targetCaseEl.textContent = round.upper ? 'capital' : 'small';
+  wordBar.className = 'word-bar hint';
+  wordBar.textContent = 'Tap the eggs with the letter!';
+  renderProgress();
+  buildEggs();
+  promptSpeech();
+}
+
+$('listenBtn').addEventListener('click', promptSpeech);
+$('skipBtn').addEventListener('click', newRound);
+
+newRound();
+</script>
+</body>
+</html>
