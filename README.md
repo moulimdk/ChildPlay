@@ -24,7 +24,7 @@ More activities will be added as he grows. Difficulty also adapts: the Letters p
 
 Each activity page has a language toggle, so switching between versions is one click.
 
-## 📁 Project Structure
+## 📁 Project Structure (Hi)
 
 ```
 little-learner/
