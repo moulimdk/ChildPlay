@@ -108,7 +108,7 @@
     font-family: 'Lilita One', cursive;
     font-size: clamp(1.5rem, 6vw, 2.2rem);
   }
-  .prompt b { padding: 0 10px; border-radius: 12px; background: var(--yellow); border: 3px solid var(--ink); }
+  .prompt b { padding: 0 10px; border-radius: 12px; background: #fff; border: 3px solid var(--ink); }  /* neutral: never tint with a tested color */
 
   .progress { display: flex; gap: 8px; justify-content: center; }
   .pip { width: 20px; height: 20px; border-radius: 50%; border: 3px solid var(--ink); background: #fff; transition: background 0.2s; }
@@ -170,7 +170,7 @@
 
   <!-- RAINBOW -->
   <section class="view" id="v-rainbow">
-    <div class="prompt" id="rbPrompt">Tap the <b>red</b> arc!</div>
+    <div class="prompt" id="rbPrompt"></div>
     <div class="rainbow-wrap"><svg viewBox="0 0 400 215" id="rbSvg" role="img" aria-label="Rainbow"></svg></div>
     <div class="name-chips" id="rbChips"></div>
   </section>
@@ -245,17 +245,14 @@ const COLORS = [
   { name: 'Pink',   hex: '#F58FB5', fg: '#fff',  emoji: '🌸', thing: 'Flower' },
   { name: 'Brown',  hex: '#8B5E3C', fg: '#fff',  emoji: '🐻', thing: 'Bear' },
   { name: 'Black',  hex: '#2B2118', fg: '#fff',  emoji: '🐈‍⬛', thing: 'Cat' },
-  { name: 'White',  hex: '#FFFFFF', fg: '#2B2118', emoji: '☁️', thing: 'Cloud' }
+  { name: 'White',  hex: '#FFFFFF', fg: '#2B2118', emoji: '☁️', thing: 'Cloud' },
+  { name: 'Indigo', hex: '#5B5BD6', fg: '#fff',  emoji: '🫐', thing: 'Blueberry' },
+  { name: 'Violet', hex: '#8E4FC8', fg: '#fff',  emoji: '🔮', thing: 'Crystal ball' }
 ];
-const RAINBOW = [
-  { name: 'Red',    hex: '#E84A45', fg: '#fff' },
-  { name: 'Orange', hex: '#F4933E', fg: '#fff' },
-  { name: 'Yellow', hex: '#FCCC3E', fg: '#2B2118' },
-  { name: 'Green',  hex: '#6BBE5A', fg: '#fff' },
-  { name: 'Blue',   hex: '#4D9DE0', fg: '#fff' },
-  { name: 'Indigo', hex: '#5B5BD6', fg: '#fff' },
-  { name: 'Violet', hex: '#A77BCC', fg: '#fff' }
-];
+// Purple and Violet look alike, so never offer them together in Find the Color
+const LOOKALIKE = { Purple: 'Violet', Violet: 'Purple' };
+const RAINBOW = ['Red', 'Orange', 'Yellow', 'Green', 'Blue', 'Indigo', 'Violet']
+  .map(n => COLORS.find(c => c.name === n));
 const CHEERS = ['Yay!', 'Wow!', 'Great!', 'Woohoo!', 'Awesome!', 'Hooray!'];
 const CONFETTI = ['#FF6B6B','#FFD93D','#4ECDC4','#5B9FE0','#9F7AEA','#95E06C','#FF85B3','#FFA94D'];
 const FIND_ROUNDS = 5;
@@ -358,7 +355,7 @@ function startFind() {
 function newFindRound() {
   findLocked = false;
   findTarget = nextFindTarget();
-  const options = shuffle([findTarget, ...shuffle(COLORS.filter(c => c.name !== findTarget.name)).slice(0, 3)]);
+  const options = shuffle([findTarget, ...shuffle(COLORS.filter(c => c.name !== findTarget.name && c.name !== LOOKALIKE[findTarget.name])).slice(0, 3)]);
   $('findPrompt').innerHTML = `Tap the <b>${findTarget.name}</b> one!`;
   $('findGrid').innerHTML = options.map(swatchHTML).join('');
   $('findGrid').querySelectorAll('.swatch').forEach(b => b.addEventListener('click', () => onFindTap(b)));
@@ -415,7 +412,8 @@ function refreshRainbow() {
   $('rbChips').querySelectorAll('.chip').forEach((c, i) => c.classList.toggle('on', i < rbStep));
   if (rbStep < RAINBOW.length) {
     const n = RAINBOW[rbStep].name;
-    $('rbPrompt').innerHTML = `Tap the <b>${n.toLowerCase()}</b> arc!`;
+    const c = RAINBOW[rbStep];
+    $('rbPrompt').innerHTML = `Tap the <b style="background:${c.hex};color:${c.fg}">${n.toLowerCase()}</b> arc!`;
     replay = () => { resetSpeech(); say(`Tap the ${n.toLowerCase()} arc!`); };
   } else {
     $('rbPrompt').innerHTML = 'A <b>rainbow</b>! 🌈';
