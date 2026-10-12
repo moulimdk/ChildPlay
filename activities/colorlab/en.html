@@ -70,7 +70,7 @@
     font-family: 'Lilita One', cursive;
     font-size: clamp(1.3rem, 5.5vw, 2rem);
   }
-  .prompt b { padding: 0 10px; border-radius: 12px; border: 3px solid var(--ink); background: var(--yellow); }
+  .prompt b { padding: 0 10px; border-radius: 12px; border: 3px solid var(--ink); background: #fff; }
 
   .progress { display: flex; gap: 8px; justify-content: center; }
   .pip { width: 20px; height: 20px; border-radius: 50%; border: 3px solid var(--ink); background: #fff; transition: background 0.2s; }
@@ -436,7 +436,7 @@ function newGuess() {
   const [x, y] = Math.random() < 0.5 ? [m.a, m.b] : [m.b, m.a];
   paint($('gA'), x); paint($('gB'), y);
   clearBlob($('gR'), '?'); $('gR').classList.add('result');
-  $('guessPrompt').innerHTML = `<b style="background:${C[x].hex};color:${C[x].fg}">${C[x].name}</b> + <b style="background:${C[y].hex};color:${C[y].fg}">${C[y].name}</b> = ?`;
+  $('guessPrompt').innerHTML = `<b>${C[x].name}</b> + <b>${C[y].name}</b> = ?`;
   const wrong = shuffle(Object.keys(C).filter(k => k !== m.out && k !== x && k !== y));
   $('guessChoices').innerHTML = shuffle([m.out, wrong[0], wrong[1]]).map(choiceHTML).join('');
   $('guessChoices').querySelectorAll('.choice').forEach(b => b.addEventListener('click', () => onGuess(b)));
@@ -492,7 +492,7 @@ function onSeg(k) {
     seg.classList.toggle('lit', key === k || key === o);
     seg.classList.toggle('dim', key !== k && key !== o);
   });
-  $('wheelPrompt').innerHTML = `<b style="background:${C[k].hex};color:${C[k].fg}">${C[k].name}</b> ↔ <b style="background:${C[o].hex};color:${C[o].fg}">${C[o].name}</b>`;
+  $('wheelPrompt').innerHTML = `<b>${C[k].name}</b> ↔ <b>${C[o].name}</b>`;
   $('wheelNote').textContent = `${C[k].name} and ${lc(o)} are opposite friends!`;
   replay = () => { resetSpeech(); say(`${C[k].name} and ${lc(o)} are opposite friends!`); };
   replay();
@@ -509,7 +509,7 @@ function newMatch() {
   mLast = mTarget = k;
   paint($('mA'), k);
   clearBlob($('mB'), '?'); $('mB').classList.add('result');
-  $('matchPrompt').innerHTML = `Opposite friend of <b style="background:${C[k].hex};color:${C[k].fg}">${C[k].name}</b>?`;
+  $('matchPrompt').innerHTML = `Opposite friend of <b>${C[k].name}</b>?`;
   const wrong = shuffle(WHEEL.filter(x => x !== k && x !== OPPOSITE[k]));
   $('matchChoices').innerHTML = shuffle([OPPOSITE[k], wrong[0], wrong[1]]).map(choiceHTML).join('');
   $('matchChoices').querySelectorAll('.choice').forEach(b => b.addEventListener('click', () => onMatch(b)));
