@@ -12,7 +12,9 @@ This is a personal project that started as a way to make learning fun and access
 |---|----------|-------|-----------|--------|
 | 1 | **Letters** / **অক্ষর** | Letter recognition, sounds, tracing | Toddler+ | 🟡 In progress |
 | 2 | **Numbers & Counting** / **সংখ্যা ও গণনা** | Number recognition, counting, basic quantities | Preschool+ | 🟡 In progress |
-| 3 | **Spelling** / **বানান** | Word building, simple spelling, phonics | Early elementary+ | ⚪ Planned |
+| 3 | **Colors** | Color names, finding colors, rainbow order | Toddler+ | 🟡 In progress |
+| 4 | **Color Lab** | Mixing paint colors, complementary ("opposite friend") colors | Preschool+ | 🟡 In progress |
+| 5 | **Spelling** / **বানান** | Word building, simple spelling, phonics | Early elementary+ | ⚪ Planned |
 
 More activities will be added as he grows. Difficulty also adapts: the Letters page he uses at age 2 will look different than the version he uses at 4.
 
@@ -39,6 +41,10 @@ little-learner/
 |   ├── letter hunt/        # Activity 3: Letters Hunt
 │   │   ├── en.html
 │   │   └── bn.html
+│   ├── colors/             # Activity 4: Colors (names, rainbow)
+│   │   └── en.html
+│   ├── colorlab/           # Activity 5: Color Lab (mixing, opposites)
+│   │   └── en.html
 ├── assets/
 │   ├── images/
 │   ├── audio/              # Pronunciation clips
@@ -70,6 +76,7 @@ Rough plan, subject to change based on what he actually enjoys:
 - [x] Letters page (Alphabets, Hunt) (English)
 - [ ] Letters page (Bengali)
 - [x] Numbers and counting page (English)
+- [x] Colors and Color Lab pages (English)
 - [ ] Spelling page
 - [ ] Audio pronunciation for every letter and word
 - [ ] Simple matching / drag-and-drop games
