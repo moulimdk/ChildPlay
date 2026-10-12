@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>🎨 Colors!</title>
+
+<!--
+  PURPOSE OF THIS FILE:
+  Self-contained "Colors" activity (English) for toddlers/preschoolers. Three modes from a small menu:
+  - Meet the Colors: big tappable swatches with an object; tap to hear "Red! Apple is red."
+  - Find the Color: a color name is spoken ("Tap the BLUE one!"); pick the right swatch out of four.
+  - Build a Rainbow: tap the arcs in rainbow order (red, orange, yellow, green, blue, indigo, violet).
+  Every swatch also shows the color name and an emoji, so color is never the only clue.
+  Uses ../../css/common_ui.css for shared styling and the Web Speech API for voice.
+-->
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Lilita+One&family=Quicksand:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../css/common_ui.css">
+
+<style>
+  .page { width: 100%; max-width: 760px; flex: 1; display: flex; flex-direction: column; gap: 14px; }
+
+  .top-bar { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+  .screen-title {
+    font-family: 'Lilita One', cursive;
+    font-size: clamp(1.6rem, 6vw, 2.4rem);
+    color: var(--red);
+    text-shadow: 3px 3px 0 var(--yellow), 4px 4px 0 var(--ink);
+    text-align: center;
+  }
+
+  .view { display: none; flex-direction: column; align-items: center; gap: 14px; width: 100%; }
+  .view.active { display: flex; }
+
+  /* menu */
+  .mode-card {
+    width: 100%;
+    display: flex; align-items: center; gap: 16px;
+    background: var(--paper);
+    border: 5px solid var(--ink);
+    border-radius: 24px;
+    box-shadow: 0 7px 0 var(--ink);
+    padding: 16px 20px;
+    font-family: 'Lilita One', cursive;
+    font-size: clamp(1.4rem, 5vw, 2rem);
+    color: var(--ink);
+    cursor: pointer;
+    text-align: left;
+  }
+  .mode-card .emoji { font-size: 2.6rem; }
+  .mode-card small { display: block; font-family: var(--font-body); font-weight: 700; font-size: 1rem; color: #8a7560; }
+  .mode-card:active { transform: translateY(4px); box-shadow: 0 3px 0 var(--ink); }
+  .mode-card.m1 { background: var(--tile1); }
+  .mode-card.m2 { background: var(--tile2); }
+  .mode-card.m3 { background: var(--tile3); }
+
+  /* swatches */
+  .swatch {
+    border: 5px solid var(--ink);
+    border-radius: 22px;
+    box-shadow: 0 6px 0 var(--ink);
+    background: var(--sw, #fff);
+    color: var(--fg, var(--ink));
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 2px;
+    cursor: pointer;
+    font-family: 'Lilita One', cursive;
+    padding: 10px 6px;
+    transition: transform 0.12s, box-shadow 0.12s;
+  }
+  .swatch:active { transform: translateY(4px); box-shadow: 0 2px 0 var(--ink); }
+  .swatch .e { font-size: clamp(2rem, 9vw, 3rem); line-height: 1.1; }
+  .swatch .n { font-size: clamp(1rem, 4vw, 1.4rem); letter-spacing: 1px; }
+  .swatch.picked { outline: 6px solid var(--yellow); outline-offset: 2px; }
+
+  .grid { width: 100%; display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); }
+  .grid.two { grid-template-columns: repeat(2, 1fr); }
+  .grid .swatch { min-height: 120px; }
+
+  .big-show {
+    width: 100%;
+    min-height: 200px;
+    border: 6px solid var(--ink);
+    border-radius: 28px;
+    box-shadow: 0 8px 0 var(--ink);
+    background: var(--sw, var(--paper));
+    color: var(--fg, var(--ink));
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    font-family: 'Lilita One', cursive;
+    gap: 4px;
+  }
+  .big-show .e { font-size: clamp(4rem, 18vw, 6.5rem); line-height: 1.1; }
+  .big-show .n { font-size: clamp(2.2rem, 10vw, 3.6rem); letter-spacing: 2px; }
+  .big-show .s { font-family: var(--font-body); font-weight: 700; font-size: 1.2rem; }
+  .big-show.pop { animation: pop 0.4s ease; }
+
+  .prompt {
+    width: 100%;
+    text-align: center;
+    background: var(--paper);
+    border: 4px solid var(--ink);
+    border-radius: 20px;
+    box-shadow: 0 5px 0 var(--ink);
+    padding: 10px 16px;
+    font-family: 'Lilita One', cursive;
+    font-size: clamp(1.5rem, 6vw, 2.2rem);
+  }
+  .prompt b { padding: 0 10px; border-radius: 12px; background: var(--yellow); border: 3px solid var(--ink); }
+
+  .progress { display: flex; gap: 8px; justify-content: center; }
+  .pip { width: 20px; height: 20px; border-radius: 50%; border: 3px solid var(--ink); background: #fff; transition: background 0.2s; }
+  .pip.on { background: var(--green); }
+
+  /* rainbow */
+  .rainbow-wrap {
+    width: 100%;
+    background: linear-gradient(#BFE3FF, #E8F6FF);
+    border: 5px solid var(--ink);
+    border-radius: 24px;
+    box-shadow: 6px 6px 0 var(--ink);
+    padding: 10px 6px 6px;
+  }
+  .rainbow-wrap svg { width: 100%; height: auto; display: block; }
+  .arc { fill: none; stroke-width: 24; stroke: #E4E4E4; cursor: pointer; transition: stroke 0.25s; }
+  .arc.done { stroke: var(--col); }
+  .arc.next { animation: pulse 1s ease-in-out infinite; }
+  .arc.oops { animation: shake 0.4s ease; }
+  @keyframes pulse { 0%,100% { stroke: #E4E4E4; } 50% { stroke: #BDBDBD; } }
+  .arc-label { font-family: 'Lilita One', cursive; font-size: 15px; fill: var(--ink); text-anchor: middle; pointer-events: none; }
+  .name-chips { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
+  .chip {
+    font-family: 'Lilita One', cursive; font-size: 1rem;
+    padding: 4px 12px; border: 3px solid var(--ink); border-radius: 14px;
+    background: #fff; color: #bbb; transition: all 0.25s;
+  }
+  .chip.on { background: var(--col); color: var(--fg, #fff); }
+</style>
+</head>
+<body>
+
+<div class="page">
+  <div class="top-bar">
+    <button class="icon-btn" id="backBtn" aria-label="Back">🏠</button>
+    <div class="screen-title" id="title">🎨 Colors!</div>
+    <button class="icon-btn" id="listenBtn" aria-label="Listen again" title="Listen">🔊</button>
+  </div>
+
+  <!-- MENU -->
+  <section class="view active" id="v-menu">
+    <button class="mode-card m1" data-goto="meet"><span class="emoji">👀</span><span>Meet the Colors<small>Tap and hear each color</small></span></button>
+    <button class="mode-card m2" data-goto="find"><span class="emoji">🔍</span><span>Find the Color<small>Tap the one I say</small></span></button>
+    <button class="mode-card m3" data-goto="rainbow"><span class="emoji">🌈</span><span>Build a Rainbow<small>Tap the arcs in order</small></span></button>
+  </section>
+
+  <!-- MEET -->
+  <section class="view" id="v-meet">
+    <div class="big-show" id="meetShow"></div>
+    <div class="grid" id="meetGrid"></div>
+  </section>
+
+  <!-- FIND -->
+  <section class="view" id="v-find">
+    <div class="prompt" id="findPrompt">Tap the <b>?</b> one!</div>
+    <div class="progress" id="findPips"></div>
+    <div class="grid two" id="findGrid"></div>
+  </section>
+
+  <!-- RAINBOW -->
+  <section class="view" id="v-rainbow">
+    <div class="prompt" id="rbPrompt">Tap the <b>red</b> arc!</div>
+    <div class="rainbow-wrap"><svg viewBox="0 0 400 215" id="rbSvg" role="img" aria-label="Rainbow"></svg></div>
+    <div class="name-chips" id="rbChips"></div>
+  </section>
+</div>
+
+<div class="confetti-layer" id="confettiLayer"></div>
+<div class="cheer" id="cheer">Yay!</div>
+
+<script>
+/* ===== SPEECH (Web Speech API, queued) ===== */
+const synth = window.speechSynthesis;
+let voice = null;
+const speechQueue = [];
+let speechBusy = false;
+
+function pickVoice() {
+  if (!synth) return;
+  const voices = synth.getVoices();
+  voice = voices.find(v => /en-/i.test(v.lang) && /female|google|samantha|karen|zira/i.test(v.name))
+       || voices.find(v => /en-/i.test(v.lang))
+       || voices[0];
+}
+if (synth) {
+  pickVoice();
+  synth.onvoiceschanged = () => { pickVoice(); speakNext(); };
+}
+function speakNext() {
+  if (speechBusy || speechQueue.length === 0) return;
+  speechBusy = true;
+  const u = speechQueue.shift();
+  synth.cancel();
+  synth.speak(u);
+}
+function resetSpeech() {
+  if (!synth) return;
+  synth.cancel();
+  speechQueue.length = 0;
+  speechBusy = false;
+}
+function say(text, pitch = 1.3, rate = 0.9, onend = null) {
+  if (!synth) { if (onend) setTimeout(onend, 600); return; }
+  if (!voice && synth.getVoices().length > 0) pickVoice();
+  const u = new SpeechSynthesisUtterance(String(text));
+  if (voice) u.voice = voice;
+  u.pitch = pitch; u.rate = rate; u.volume = 1;
+  const done = () => { speechBusy = false; if (onend) onend(); speakNext(); };
+  u.onend = done; u.onerror = done;
+  speechQueue.push(u);
+  speakNext();
+}
+/* iOS/Safari needs a user gesture before speech works */
+let unlocked = false;
+function unlockAudio() {
+  if (unlocked || !synth) return;
+  unlocked = true;
+  const u = new SpeechSynthesisUtterance(' ');
+  u.volume = 0;
+  synth.speak(u);
+}
+document.body.addEventListener('touchstart', unlockAudio, { once: true });
+document.body.addEventListener('click', unlockAudio, { once: true });
+
+/* ===== DATA ===== */
+// fg = readable text color on the swatch
+const COLORS = [
+  { name: 'Red',    hex: '#E84A45', fg: '#fff',  emoji: '🍎', thing: 'Apple' },
+  { name: 'Yellow', hex: '#FCCC3E', fg: '#2B2118', emoji: '🍌', thing: 'Banana' },
+  { name: 'Blue',   hex: '#4D9DE0', fg: '#fff',  emoji: '🐳', thing: 'Whale' },
+  { name: 'Green',  hex: '#6BBE5A', fg: '#fff',  emoji: '🐸', thing: 'Frog' },
+  { name: 'Orange', hex: '#F4933E', fg: '#fff',  emoji: '🍊', thing: 'Orange' },
+  { name: 'Purple', hex: '#A77BCC', fg: '#fff',  emoji: '🍇', thing: 'Grapes' },
+  { name: 'Pink',   hex: '#F58FB5', fg: '#fff',  emoji: '🌸', thing: 'Flower' },
+  { name: 'Brown',  hex: '#8B5E3C', fg: '#fff',  emoji: '🐻', thing: 'Bear' },
+  { name: 'Black',  hex: '#2B2118', fg: '#fff',  emoji: '🐈‍⬛', thing: 'Cat' },
+  { name: 'White',  hex: '#FFFFFF', fg: '#2B2118', emoji: '☁️', thing: 'Cloud' }
+];
+const RAINBOW = [
+  { name: 'Red',    hex: '#E84A45', fg: '#fff' },
+  { name: 'Orange', hex: '#F4933E', fg: '#fff' },
+  { name: 'Yellow', hex: '#FCCC3E', fg: '#2B2118' },
+  { name: 'Green',  hex: '#6BBE5A', fg: '#fff' },
+  { name: 'Blue',   hex: '#4D9DE0', fg: '#fff' },
+  { name: 'Indigo', hex: '#5B5BD6', fg: '#fff' },
+  { name: 'Violet', hex: '#A77BCC', fg: '#fff' }
+];
+const CHEERS = ['Yay!', 'Wow!', 'Great!', 'Woohoo!', 'Awesome!', 'Hooray!'];
+const CONFETTI = ['#FF6B6B','#FFD93D','#4ECDC4','#5B9FE0','#9F7AEA','#95E06C','#FF85B3','#FFA94D'];
+const FIND_ROUNDS = 5;
+
+/* ===== HELPERS ===== */
+const $ = id => document.getElementById(id);
+
+function shuffle(arr) {
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function celebrate() {
+  const layer = $('confettiLayer');
+  for (let i = 0; i < 60; i++) {
+    const c = document.createElement('div');
+    c.className = 'confetti';
+    c.style.left = Math.random() * 100 + 'vw';
+    c.style.background = CONFETTI[i % CONFETTI.length];
+    c.style.animationDuration = (2 + Math.random() * 2) + 's';
+    c.style.animationDelay = (Math.random() * 0.5) + 's';
+    c.style.borderRadius = Math.random() > 0.5 ? '50%' : '3px';
+    layer.appendChild(c);
+    setTimeout(() => c.remove(), 4800);
+  }
+  const cheer = $('cheer');
+  cheer.textContent = CHEERS[Math.floor(Math.random() * CHEERS.length)];
+  cheer.classList.add('show');
+  setTimeout(() => cheer.classList.remove('show'), 1400);
+}
+
+function swatchHTML(c) {
+  return `<button class="swatch" style="--sw:${c.hex};--fg:${c.fg}" data-name="${c.name}" aria-label="${c.name}">
+    <span class="e">${c.emoji}</span><span class="n">${c.name}</span></button>`;
+}
+
+/* ===== NAVIGATION ===== */
+const TITLES = { menu: '🎨 Colors!', meet: '👀 Meet', find: '🔍 Find', rainbow: '🌈 Rainbow' };
+let current = 'menu';
+let replay = () => {};
+
+function show(view) {
+  resetSpeech();
+  current = view;
+  document.querySelectorAll('.view').forEach(v => v.classList.toggle('active', v.id === 'v-' + view));
+  $('title').textContent = TITLES[view];
+  $('backBtn').textContent = view === 'menu' ? '🏠' : '⬅️';
+  replay = () => {};
+  if (view === 'meet') startMeet();
+  if (view === 'find') startFind();
+  if (view === 'rainbow') startRainbow();
+}
+$('backBtn').addEventListener('click', () => {
+  if (current === 'menu') location.href = '../../index.html';
+  else show('menu');
+});
+$('listenBtn').addEventListener('click', () => replay());
+document.querySelectorAll('[data-goto]').forEach(b => b.addEventListener('click', () => show(b.dataset.goto)));
+
+/* ===== MODE 1: MEET THE COLORS ===== */
+function showColor(c, speak = true) {
+  const el = $('meetShow');
+  el.style.setProperty('--sw', c.hex);
+  el.style.setProperty('--fg', c.fg);
+  el.innerHTML = `<div class="e">${c.emoji}</div><div class="n">${c.name}</div><div class="s">${c.thing} is ${c.name.toLowerCase()}</div>`;
+  el.classList.remove('pop'); void el.offsetWidth; el.classList.add('pop');
+  replay = () => { resetSpeech(); say(`${c.name}!`, 1.4, 0.8); say(`${c.thing} is ${c.name.toLowerCase()}.`); };
+  if (speak) replay();
+}
+function startMeet() {
+  $('meetGrid').innerHTML = COLORS.map(swatchHTML).join('');
+  $('meetGrid').querySelectorAll('.swatch').forEach(b =>
+    b.addEventListener('click', () => showColor(COLORS.find(c => c.name === b.dataset.name))));
+  showColor(COLORS[0], false);
+  say('Tap a color!');
+}
+
+/* ===== MODE 2: FIND THE COLOR ===== */
+let findDeck = [], findTarget = null, findDone = 0, findLocked = false;
+
+function nextFindTarget() {
+  if (findDeck.length === 0) findDeck = shuffle(COLORS);
+  let i = findDeck.findIndex(c => !findTarget || c.name !== findTarget.name);
+  if (i < 0) i = 0;
+  return findDeck.splice(i, 1)[0];
+}
+function renderPips() {
+  $('findPips').innerHTML = Array.from({ length: FIND_ROUNDS }, (_, i) =>
+    `<div class="pip ${i < findDone ? 'on' : ''}"></div>`).join('');
+}
+function startFind() {
+  findDeck = []; findTarget = null; findDone = 0;
+  renderPips();
+  newFindRound();
+}
+function newFindRound() {
+  findLocked = false;
+  findTarget = nextFindTarget();
+  const options = shuffle([findTarget, ...shuffle(COLORS.filter(c => c.name !== findTarget.name)).slice(0, 3)]);
+  $('findPrompt').innerHTML = `Tap the <b>${findTarget.name}</b> one!`;
+  $('findGrid').innerHTML = options.map(swatchHTML).join('');
+  $('findGrid').querySelectorAll('.swatch').forEach(b => b.addEventListener('click', () => onFindTap(b)));
+  replay = () => { resetSpeech(); say(`Tap the ${findTarget.name} one!`); };
+  replay();
+}
+function onFindTap(btn) {
+  if (findLocked) return;
+  if (btn.dataset.name === findTarget.name) {
+    findLocked = true;
+    btn.classList.add('correct');
+    findDone++;
+    renderPips();
+    resetSpeech();
+    say(`Yes! ${findTarget.name}!`, 1.4, 0.85);
+    if (findDone >= FIND_ROUNDS) {
+      celebrate();
+      say('You found them all!', 1.4, 0.9, () => setTimeout(startFind, 600));
+    } else {
+      setTimeout(newFindRound, 1500);
+    }
+  } else {
+    btn.classList.remove('wrong'); void btn.offsetWidth; btn.classList.add('wrong');
+    resetSpeech();
+    say(`That is ${btn.dataset.name.toLowerCase()}. Try again!`, 1.2, 0.9);
+  }
+}
+
+/* ===== MODE 3: BUILD A RAINBOW ===== */
+let rbStep = 0;
+const CX = 200, CY = 205, R0 = 175, GAP = 26;
+
+function startRainbow() {
+  rbStep = 0;
+  const svg = $('rbSvg');
+  // outer arc = red, inner = violet
+  svg.innerHTML = RAINBOW.map((c, i) => {
+    const r = R0 - i * GAP;
+    return `<path class="arc" data-i="${i}" style="--col:${c.hex}" d="M ${CX - r} ${CY} A ${r} ${r} 0 0 1 ${CX + r} ${CY}"/>`;
+  }).join('');
+  $('rbChips').innerHTML = RAINBOW.map(c =>
+    `<span class="chip" style="--col:${c.hex};--fg:${c.fg}">${c.name}</span>`).join('');
+  svg.querySelectorAll('.arc').forEach(a => a.addEventListener('click', () => onArc(a)));
+  refreshRainbow();
+  say('Let us build a rainbow!');
+  say(`Tap the ${RAINBOW[0].name.toLowerCase()} arc!`);
+}
+function refreshRainbow() {
+  const arcs = $('rbSvg').querySelectorAll('.arc');
+  arcs.forEach((a, i) => {
+    a.classList.toggle('done', i < rbStep);
+    a.classList.toggle('next', i === rbStep);
+  });
+  $('rbChips').querySelectorAll('.chip').forEach((c, i) => c.classList.toggle('on', i < rbStep));
+  if (rbStep < RAINBOW.length) {
+    const n = RAINBOW[rbStep].name;
+    $('rbPrompt').innerHTML = `Tap the <b>${n.toLowerCase()}</b> arc!`;
+    replay = () => { resetSpeech(); say(`Tap the ${n.toLowerCase()} arc!`); };
+  } else {
+    $('rbPrompt').innerHTML = 'A <b>rainbow</b>! 🌈';
+    replay = () => { resetSpeech(); say(RAINBOW.map(c => c.name).join(', ') + '. A rainbow!'); };
+  }
+}
+function onArc(arc) {
+  if (rbStep >= RAINBOW.length) return;
+  const i = +arc.dataset.i;
+  if (i === rbStep) {
+    resetSpeech();
+    say(RAINBOW[i].name + '!', 1.4, 0.85);
+    rbStep++;
+    refreshRainbow();
+    if (rbStep === RAINBOW.length) {
+      celebrate();
+      say(RAINBOW.map(c => c.name).join(', ') + '. A rainbow!', 1.3, 0.85, () => setTimeout(startRainbow, 1500));
+    } else {
+      say(`Now the ${RAINBOW[rbStep].name.toLowerCase()} one!`);
+    }
+  } else if (i > rbStep) {
+    arc.classList.remove('oops'); void arc.getBoundingClientRect(); arc.classList.add('oops');
+    resetSpeech();
+    say(`Not yet! Find the ${RAINBOW[rbStep].name.toLowerCase()} arc.`);
+  }
+}
+</script>
+</body>
+</html>
